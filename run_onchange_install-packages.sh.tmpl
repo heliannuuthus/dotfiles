@@ -1,0 +1,115 @@
+#!/bin/bash
+set -euo pipefail
+
+{{ if eq .chezmoi.os "darwin" -}}
+# --- macOS: Homebrew ---
+
+if ! command -v brew &>/dev/null; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# formula
+brew install chezmoi eza fzf gh git glab go kubecm kubernetes-cli \
+    mkcert n neovim oath-toolkit ripgrep starship wget
+
+# cask
+brew install --cask iterm2 orbstack cursor google-chrome \
+    font-monaspace-frozen font-monaspace-nf \
+    betterdisplay eul jordanbaird-ice \
+    mongodb-compass telegram vnc-viewer wechat wetype dingtalk mailmaster \
+    gcloud-cli
+
+{{ else -}}
+# --- Linux ---
+
+sudo apt-get update -qq
+
+# 基础工具
+sudo apt-get install -y -qq git curl wget unzip build-essential
+
+# eza
+if ! command -v eza &>/dev/null; then
+    sudo mkdir -p /etc/apt/keyrings
+    wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
+    sudo apt-get update -qq && sudo apt-get install -y -qq eza
+fi
+
+# fzf
+if ! command -v fzf &>/dev/null; then
+    sudo apt-get install -y -qq fzf
+fi
+
+# ripgrep
+if ! command -v rg &>/dev/null; then
+    sudo apt-get install -y -qq ripgrep
+fi
+
+# neovim
+if ! command -v nvim &>/dev/null; then
+    sudo apt-get install -y -qq neovim
+fi
+
+# starship
+if ! command -v starship &>/dev/null; then
+    curl -sS https://starship.rs/install.sh | sh -s -- -y
+fi
+
+# gh (GitHub CLI)
+if ! command -v gh &>/dev/null; then
+    (type -p wget >/dev/null || sudo apt-get install wget -y) \
+    && sudo mkdir -p -m 755 /etc/apt/keyrings \
+    && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+    && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && sudo apt-get update -qq && sudo apt-get install -y -qq gh
+fi
+
+# kubectl
+if ! command -v kubectl &>/dev/null; then
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl"
+    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    rm kubectl
+fi
+
+# Go
+if ! command -v go &>/dev/null; then
+    GO_VERSION=$(curl -sL 'https://go.dev/VERSION?m=text' | head -1)
+    curl -sLO "https://go.dev/dl/${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    rm "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    export PATH="/usr/local/go/bin:$PATH"
+fi
+
+# n (Node version manager)
+if ! command -v n &>/dev/null; then
+    curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | sudo bash -s lts
+    sudo npm install -g n
+fi
+
+# Monaspace Nerd Font
+FONT_DIR="$HOME/.local/share/fonts"
+if [ ! -d "$FONT_DIR/monaspace" ]; then
+    mkdir -p "$FONT_DIR/monaspace"
+    MONO_TMP=$(mktemp -d)
+    curl -sL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Monaspace.tar.xz" -o "$MONO_TMP/Monaspace.tar.xz"
+    tar -xf "$MONO_TMP/Monaspace.tar.xz" -C "$FONT_DIR/monaspace"
+    rm -rf "$MONO_TMP"
+    fc-cache -f "$FONT_DIR"
+fi
+
+{{ end -}}
+
+# --- 跨平台 ---
+
+# Rust
+if ! command -v rustup &>/dev/null; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+fi
+
+# hostctl (通过 Go 安装)
+if ! command -v hostctl &>/dev/null && command -v go &>/dev/null; then
+    go install github.com/guumaster/hostctl@latest
+fi

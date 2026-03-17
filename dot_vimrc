@@ -1,0 +1,3 @@
+syntax on
+set termguicolors
+colorscheme desert   " 内置主题，不需要安装

@@ -1,0 +1,9 @@
+[user]
+    name = {{ .name }}
+    email = {{ .email }}
+
+[includeIf "gitdir:~/Code/heliannuuthus/"]
+    path = ~/.gitconfig-heliannuuthus
+
+[url "git@github.com:heliannuuthus/aegis-go"]
+    insteadOf = https://github.com/heliannuuthus/aegis-go
