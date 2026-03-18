@@ -1,23 +1,20 @@
 name = "test"
 
-# 在下方添加 hosts 条目，取消注释并修改即可:
-#
-# [[entries]]
-# ip = "127.0.0.1"
-# hosts = [
-#     "example.local",
-#     "api.example.local",
-# ]
-# comment = "可选的备注"  # 此字段可省略
-#
-# 可添加多组 [[entries]]，每组对应一条 hosts 记录
 [[entries]]
 ip = "127.0.0.1"
 hosts = [
-"iris.heliannuuthus.com",
-"hermes.heliannuuthus.com",
-"aegis.heliannuuthus.com",
-"chaos.heliannuuthus.com",
-"zwei.heliannuuthus.com",
-"atlas.heliannuuthus.com"
+    "aegis.heliannuuthus.com",
+    "atlas.heliannuuthus.com",
+    "hermes.heliannuuthus.com",
+    "zwei.heliannuuthus.com",
+    "iris.heliannuuthus.com",
+    "chaos.heliannuuthus.com"
 ]
+
+[[entries]]
+ip = "192.168.1.100"
+hosts = ["newhost.example.com"]
+
+[[entries]]
+ip = "127.0.0.1"
+hosts = ["auth.heliannuuthus.com"]
