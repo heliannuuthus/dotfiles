@@ -5,3 +5,7 @@ LICENSE
 .config/iterm2
 .zprofile
 {{ end }}
+
+{{ if eq .chezmoi.os "darwin" }}
+.config/kitty
+{{ end }}
