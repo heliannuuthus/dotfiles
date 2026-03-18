@@ -46,9 +46,44 @@ if ! command -v rg &>/dev/null; then
     sudo apt-get install -y -qq ripgrep
 fi
 
+# bat (batcat on Debian/Ubuntu)
+if ! command -v batcat &>/dev/null; then
+    sudo apt-get install -y -qq bat
+fi
+
+# fd-find (fdfind on Debian/Ubuntu)
+if ! command -v fdfind &>/dev/null; then
+    sudo apt-get install -y -qq fd-find
+fi
+
+# dust
+if ! command -v dust &>/dev/null; then
+    DUST_VERSION=$(curl -sL "https://api.github.com/repos/bootandy/dust/releases/latest" | grep -oP '"tag_name":\s*"v?\K[^"]+')
+    DUST_ARCH=$(dpkg --print-architecture)
+    if [ "$DUST_ARCH" = "amd64" ]; then DUST_ARCH="x86_64"; fi
+    curl -sL "https://github.com/bootandy/dust/releases/latest/download/dust-v${DUST_VERSION}-${DUST_ARCH}-unknown-linux-gnu.tar.gz" | \
+        sudo tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/dust'
+fi
+
+# zoxide
+if ! command -v zoxide &>/dev/null; then
+    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+fi
+
 # neovim
 if ! command -v nvim &>/dev/null; then
     sudo apt-get install -y -qq neovim
+fi
+
+# kitty
+if ! command -v kitty &>/dev/null; then
+    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+    mkdir -p ~/.local/bin
+    ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
+    cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/ 2>/dev/null || true
+    cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/ 2>/dev/null || true
+    sed -i "s|Icon=kitty|Icon=$(readlink -f ~)/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" \
+        ~/.local/share/applications/kitty*.desktop 2>/dev/null || true
 fi
 
 # starship
@@ -89,6 +124,19 @@ if ! command -v n &>/dev/null; then
     sudo npm install -g n
 fi
 
+# pnpm
+if ! command -v pnpm &>/dev/null; then
+    curl -fsSL https://get.pnpm.io/install.sh | sh -
+fi
+
+# pyenv
+if ! command -v pyenv &>/dev/null; then
+    sudo apt-get install -y -qq make libssl-dev zlib1g-dev libbz2-dev \
+        libreadline-dev libsqlite3-dev llvm libncursesw5-dev xz-utils \
+        tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+    curl https://pyenv.run | bash
+fi
+
 # Monaspace Nerd Font
 FONT_DIR="$HOME/.local/share/fonts"
 if [ ! -d "$FONT_DIR/monaspace" ]; then
@@ -97,6 +145,17 @@ if [ ! -d "$FONT_DIR/monaspace" ]; then
     curl -sL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Monaspace.tar.xz" -o "$MONO_TMP/Monaspace.tar.xz"
     tar -xf "$MONO_TMP/Monaspace.tar.xz" -C "$FONT_DIR/monaspace"
     rm -rf "$MONO_TMP"
+    fc-cache -f "$FONT_DIR"
+fi
+
+# LXGW WenKai (霞鹜文楷)
+if ! fc-list | grep -qi "LXGW WenKai"; then
+    mkdir -p "$FONT_DIR/lxgw-wenkai"
+    LXGW_TMP=$(mktemp -d)
+    LXGW_VERSION=$(curl -sL "https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest" | grep -oP '"tag_name":\s*"\K[^"]+')
+    curl -sL "https://github.com/lxgw/LxgwWenKai/releases/download/${LXGW_VERSION}/lxgw-wenkai-v${LXGW_VERSION#v}.tar.gz" -o "$LXGW_TMP/lxgw.tar.gz"
+    tar -xzf "$LXGW_TMP/lxgw.tar.gz" -C "$FONT_DIR/lxgw-wenkai" --strip-components=1
+    rm -rf "$LXGW_TMP"
     fc-cache -f "$FONT_DIR"
 fi
 

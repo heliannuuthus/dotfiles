@@ -32,3 +32,17 @@ url = "https://github.com/Aloxaf/fzf-tab/archive/master.tar.gz"
 exact = true
 stripComponents = 1
 refreshPeriod = "168h"
+
+[".oh-my-zsh/custom/plugins/zsh-completions"]
+type = "archive"
+url = "https://github.com/zsh-users/zsh-completions/archive/master.tar.gz"
+exact = true
+stripComponents = 1
+refreshPeriod = "168h"
+
+[".config/kitty/kitty-themes"]
+type = "archive"
+url = "https://github.com/dexpota/kitty-themes/archive/master.tar.gz"
+exact = true
+stripComponents = 1
+refreshPeriod = "168h"
