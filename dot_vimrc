@@ -1,3 +1,50 @@
+" 基础设置
+set nocompatible              " 关闭 vi 兼容模式
+set encoding=utf-8            " 编码设置
+set fileencoding=utf-8
+
+" 语法高亮和颜色
+syntax enable                 " 启用语法高亮
 syntax on
-set termguicolors
-colorscheme desert   " 内置主题，不需要安装
+set background=dark           " 深色背景
+colorscheme desert            " 使用 desert 配色方案（vim 内置）
+
+" 行号和光标
+set number                    " 显示行号
+set relativenumber            " 相对行号
+set cursorline                " 高亮当前行
+set showcmd                   " 显示输入的命令
+set showmode                  " 显示当前模式
+
+" 搜索设置
+set hlsearch                  " 高亮搜索结果
+set incsearch                 " 增量搜索
+set ignorecase                " 搜索忽略大小写
+set smartcase                 " 智能大小写
+
+" 缩进设置
+set autoindent                " 自动缩进
+set smartindent               " 智能缩进
+set tabstop=4                 " Tab 宽度
+set shiftwidth=4              " 缩进宽度
+set expandtab                 " Tab 转空格
+set softtabstop=4
+
+" 界面优化
+set laststatus=2              " 始终显示状态栏
+set ruler                     " 显示光标位置
+set wildmenu                  " 命令行补全增强
+set wildmode=longest:full,full
+set scrolloff=5               " 光标距顶/底部保持5行
+
+" 其他实用设置
+set mouse=a                   " 启用鼠标
+set clipboard=unnamedplus     " 使用系统剪贴板
+set backspace=indent,eol,start " 退格键正常工作
+set wrap                      " 自动换行
+set linebreak                 " 不在单词中间断行
+
+" 文件类型检测
+filetype on
+filetype plugin on
+filetype indent on
