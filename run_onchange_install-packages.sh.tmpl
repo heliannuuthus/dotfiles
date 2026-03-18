@@ -109,13 +109,17 @@ if ! command -v kubectl &>/dev/null; then
     rm kubectl
 fi
 
-# Go
+# Go (用户级多版本, ~/.go/goX.Y.Z/, current 软链指向当前版本)
 if ! command -v go &>/dev/null; then
     GO_VERSION=$(curl -sL 'https://go.dev/VERSION?m=text' | head -1)
+    GOPATH_DIR="$HOME/.go"
+    mkdir -p "$GOPATH_DIR"
     curl -sLO "https://go.dev/dl/${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
-    sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    tar -C "$GOPATH_DIR" -xzf "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    mv "$GOPATH_DIR/go" "$GOPATH_DIR/${GO_VERSION}"
+    ln -sfn "$GOPATH_DIR/${GO_VERSION}" "$GOPATH_DIR/current"
     rm "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
-    export PATH="/usr/local/go/bin:$PATH"
+    export PATH="$GOPATH_DIR/current/bin:$PATH"
 fi
 
 # n (Node version manager)

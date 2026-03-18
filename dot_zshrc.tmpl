@@ -9,7 +9,8 @@ export LC_ALL=en_US.UTF-8
 export QT_IM_MODULE=fcitx
 export XMODIFIERS=@im=fcitx
 
-export PATH="/usr/local/go/bin:$HOME/bin:$HOME/.local/bin:$GOPATH/bin:$HOME/.cargo/bin:$PATH"
+export GOROOT="$HOME/.go/current"
+export PATH="$GOROOT/bin:$HOME/bin:$HOME/.local/bin:$GOPATH/bin:$HOME/.cargo/bin:$PATH"
 {{ end -}}
 
 # Rust 镜像 (rsproxy.cn)
@@ -77,6 +78,7 @@ alias kcm="kubecm switch"
 alias k="kubectl"
 alias vim="nvim"
 alias pn="pnpm"
+alias np="npm"
 
 {{ if ne .chezmoi.os "darwin" -}}
 # Linux 特有别名 (Debian/Ubuntu 包名与上游不同)
