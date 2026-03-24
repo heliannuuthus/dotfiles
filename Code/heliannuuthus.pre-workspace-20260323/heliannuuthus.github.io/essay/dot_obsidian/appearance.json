@@ -1,0 +1,15 @@
+{
+  "cssTheme": "Baseline",
+  "interfaceFontFamily": "Monaspace Argon NF",
+  "monospaceFontFamily": "Monaspace Radon NF",
+  "textFontFamily": "LXGW WenKai",
+  "enabledCssSnippets": [
+    "autofading-ui",
+    "bigger-link-popup-preview",
+    "collapsing-sidebar",
+    "smaller-scrollbar",
+    "stylish-blockquotes",
+    "tag-pills",
+    "subtler-folding-gutter-arrows"
+  ]
+}
