@@ -9,3 +9,8 @@ LICENSE
 {{ if eq .chezmoi.os "darwin" }}
 .config/kitty
 {{ end }}
+
+{{ if ne .chezmoi.os "darwin" }}
+# Obsidian 配置仅在 macOS 桌面端使用（库路径亦在 darwin 工作流中维护）
+Code/heliannuuthus.pre-workspace-20260323/**
+{{ end }}
