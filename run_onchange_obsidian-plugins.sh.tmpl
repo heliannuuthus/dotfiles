@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# 同步 Obsidian 社区插件、主题、CSS snippets 到所有已注册 vault。
+# 自动从 obsidian.json 发现 vault 路径，跨平台（macOS / Linux）。
+# 依赖: bash + git + jq + gh + curl
+set -euo pipefail
+
+# ==================== 平台适配：定位 Obsidian 配置目录 ====================
+case "$(uname -s)" in
+	Darwin) OBSIDIAN_CONFIG_DIR="$HOME/Library/Application Support/obsidian" ;;
+	*)      OBSIDIAN_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/obsidian" ;;
+esac
+
+OBSIDIAN_JSON="$OBSIDIAN_CONFIG_DIR/obsidian.json"
+
+if [[ ! -f "$OBSIDIAN_JSON" ]]; then
+	echo "obsidian-plugins: skip (Obsidian 未安装: $OBSIDIAN_JSON 不存在)"
+	exit 0
+fi
+
+if ! command -v gh &>/dev/null || ! command -v jq &>/dev/null || ! command -v curl &>/dev/null; then
+	echo "obsidian-plugins: skip (需要 gh、jq、curl)"
+	exit 0
+fi
+
+if ! gh auth status &>/dev/null; then
+	echo "obsidian-plugins: skip (gh 未登录 — 运行: gh auth login)"
+	exit 0
+fi
+
+# 从 obsidian.json 解析所有 vault 路径
+mapfile -t VAULT_PATHS < <(jq -r '.vaults[].path' "$OBSIDIAN_JSON")
+
+if [[ ${#VAULT_PATHS[@]} -eq 0 ]]; then
+	echo "obsidian-plugins: skip (obsidian.json 中无注册 vault)"
+	exit 0
+fi
+
+# ==================== 插件安装函数 ====================
+install_from_github() {
+	local REPO="$1" PLUGINS_DIR="$2"
+	local TMP
+	TMP="$(mktemp -d)"
+	(cd "$TMP" && gh release download -R "$REPO" -p "main.js" -p "manifest.json" --clobber 2>/dev/null)
+	(cd "$TMP" && gh release download -R "$REPO" -p "styles.css" --clobber 2>/dev/null) || true
+	if [[ ! -f "$TMP/manifest.json" || ! -f "$TMP/main.js" ]]; then
+		echo "  FAILED $REPO (缺少 main.js 或 manifest.json)"
+		rm -rf "$TMP"
+		return 1
+	fi
+	local ID
+	ID="$(jq -r '.id' "$TMP/manifest.json")"
+	mkdir -p "$PLUGINS_DIR/$ID"
+	cp "$TMP/main.js" "$TMP/manifest.json" "$PLUGINS_DIR/$ID/"
+	[[ -f "$TMP/styles.css" ]] && cp "$TMP/styles.css" "$PLUGINS_DIR/$ID/"
+	rm -rf "$TMP"
+	echo "  OK plugin $REPO -> $ID"
+}
+
+PLUGIN_REPOS=(
+	mgmeyers/obsidian-style-settings
+	platers/obsidian-linter
+	git-no/obsidian-markdown-file-suffix
+	Ellpeck/ObsidianCustomFrames
+	denolehov/obsidian-url-into-selection
+	liamcain/obsidian-periodic-notes
+	scambier/obsidian-omnisearch
+	SkepticMystic/breadcrumbs
+	obsidian-tasks-group/obsidian-tasks
+	blacksmithgu/obsidian-dataview
+	SilentVoid13/Templater
+	chhoumann/quickadd
+	liamcain/obsidian-calendar-plugin
+	Vinzent03/obsidian-git
+	rwbr/obsidian-docusaurus-style-admonitions
+	4Source/settings-profiles-obsidian-plugin
+)
+
+SNIPPETS_BASE_URL="https://raw.githubusercontent.com/kmaasrud/awesome-obsidian/master/code/css-snippets"
+SNIPPETS=(
+	autofading-ui.css
+	better-bullet-points-in-edit-mode.css
+	bigger-link-popup-preview.css
+	bullet-point-relationship-lines.css
+	collapsing-sidebar.css
+	enlarge-image-on-hover.css
+	image-cards.css
+	nicer-checkboxes.css
+	outliner-for-the-outline-and-file-explorer.css
+	smaller-scrollbar.css
+	stylish-blockquotes.css
+	subtler-folding-gutter-arrows.css
+	tag-pills.css
+)
+
+# ==================== 遍历所有 vault 安装 ====================
+for VAULT in "${VAULT_PATHS[@]}"; do
+	if [[ ! -d "$VAULT" ]]; then
+		echo "obsidian-plugins: skip vault (目录不存在: $VAULT)"
+		continue
+	fi
+
+	echo "obsidian-plugins: >>> $VAULT"
+
+	PLUGINS_DIR="$VAULT/.obsidian/plugins"
+	THEMES_DIR="$VAULT/.obsidian/themes/Baseline"
+	SNIPPETS_DIR="$VAULT/.obsidian/snippets"
+	mkdir -p "$PLUGINS_DIR" "$THEMES_DIR" "$SNIPPETS_DIR"
+
+	# 插件
+	for repo in "${PLUGIN_REPOS[@]}"; do
+		install_from_github "$repo" "$PLUGINS_DIR"
+	done
+
+	# Baseline 主题
+	BASELINE_TMP="$(mktemp -d)"
+	git clone --depth 1 --quiet https://github.com/aaaaalexis/obsidian-baseline.git "$BASELINE_TMP/baseline"
+	cp "$BASELINE_TMP/baseline/manifest.json" "$BASELINE_TMP/baseline/theme.css" "$THEMES_DIR/"
+	rm -rf "$BASELINE_TMP"
+	echo "  OK theme Baseline"
+
+	# CSS Snippets
+	for snippet in "${SNIPPETS[@]}"; do
+		if curl -fsSL "$SNIPPETS_BASE_URL/$snippet" -o "$SNIPPETS_DIR/$snippet"; then
+			echo "  OK snippet $snippet"
+		else
+			echo "  FAILED snippet $snippet"
+		fi
+	done
+
+	# 启用插件列表
+	cat >"$VAULT/.obsidian/community-plugins.json" <<-'EOF'
+	[
+	  "breadcrumbs",
+	  "calendar-beta",
+	  "dataview",
+	  "docusaurus-style-admonitions",
+	  "obsidian-custom-frames",
+	  "obsidian-git",
+	  "obsidian-linter",
+	  "obsidian-markdown-file-suffix",
+	  "obsidian-style-settings",
+	  "obsidian-tasks-plugin",
+	  "omnisearch",
+	  "periodic-notes",
+	  "quickadd",
+	  "settings-profiles",
+	  "templater-obsidian",
+	  "url-into-selection"
+	]
+	EOF
+
+	echo "obsidian-plugins: <<< $VAULT done"
+done
+
+echo "obsidian-plugins: 全部完成"
