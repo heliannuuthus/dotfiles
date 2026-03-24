@@ -33,18 +33,27 @@ source ${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-autocomplete/zsh-autocomplete.plug
 source $ZSH/oh-my-zsh.sh
 
 # zsh-autocomplete tuning
-zstyle ':autocomplete:*complete*:*' insert-unambiguous yes
+# insert-unambiguous yes 会让 Tab 先吞掉整段无歧义匹配，体感像「一下补全整条」而不是逐项轮换
+zstyle ':autocomplete:*complete*:*' insert-unambiguous no
 zstyle ':autocomplete:*' min-input 2
 zstyle ':autocomplete:*' delay 0.1
 zstyle ':autocomplete:*:*' list-lines 8
 zstyle ':autocomplete:history-search-backward:*' list-lines 8
 
+zmodload -F zsh/terminfo p:terminfo 2>/dev/null
+# fzf 的 completion.zsh 会包一层 fzf-completion；显式指定回落 widget，避免偶发解析错
+export fzf_default_completion=menu-complete
+
 # Tab/Shift-Tab cycle completions on the command line
-bindkey              '^I'         menu-complete
-bindkey "$terminfo[kcbt]" reverse-menu-complete
+bindkey '^I' menu-complete
+if [[ -n ${terminfo[kcbt]} ]]; then
+  bindkey "$terminfo[kcbt]" reverse-menu-complete
+fi
 # Tab/Shift-Tab also cycle inside menu
-bindkey -M menuselect              '^I'         menu-complete
-bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
+bindkey -M menuselect '^I' menu-complete
+if [[ -n ${terminfo[kcbt]} ]]; then
+  bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
+fi
 # Enter in menu submits command line directly
 bindkey -M menuselect '\r' .accept-line
 # ← → in menu move cursor instead of selection
