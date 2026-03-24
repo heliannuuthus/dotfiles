@@ -35,17 +35,19 @@ source $ZSH/oh-my-zsh.sh
 # zsh-autocomplete tuning
 # insert-unambiguous yes 会让 Tab 先吞掉整段无歧义匹配，体感像「一下补全整条」而不是逐项轮换
 zstyle ':autocomplete:*complete*:*' insert-unambiguous no
-zstyle ':autocomplete:*' min-input 2
-zstyle ':autocomplete:*' delay 0.1
+# min-input>0 会在「行首只有一个词」时推迟出列表；设为 0 让候选尽量早出现
+zstyle ':autocomplete:*' min-input 0
+# 停键后多久拉补全；越小列表越早出现（过小可能略费 CPU）
+zstyle ':autocomplete:*' delay 0.05
 zstyle ':autocomplete:*:*' list-lines 8
 zstyle ':autocomplete:history-search-backward:*' list-lines 8
 
 zmodload -F zsh/terminfo p:terminfo 2>/dev/null
 # fzf 的 completion.zsh 会包一层 fzf-completion；显式指定回落 widget，避免偶发解析错
-export fzf_default_completion=menu-complete
+export fzf_default_completion=expand-or-complete
 
-# Tab/Shift-Tab cycle completions on the command line
-bindkey '^I' menu-complete
+# 主键表用 expand-or-complete：先出完整候选/菜单，再在 menuselect 里 Tab 轮换
+bindkey '^I' expand-or-complete
 if [[ -n ${terminfo[kcbt]} ]]; then
   bindkey "$terminfo[kcbt]" reverse-menu-complete
 fi
