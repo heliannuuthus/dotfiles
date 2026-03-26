@@ -14,7 +14,7 @@ brew install chezmoi eza fzf gh git glab go jq kubecm kubernetes-cli \
     mkcert n neovim oath-toolkit ripgrep starship wget
 
 # cask
-brew install --cask iterm2 orbstack cursor google-chrome obsidian \
+brew install --cask kitty orbstack cursor google-chrome obsidian \
     font-monaspace-frozen font-monaspace-nf \
     betterdisplay eul jordanbaird-ice \
     mongodb-compass telegram vnc-viewer wechat wetype dingtalk mailmaster \
@@ -168,7 +168,7 @@ if dpkg -l obsidian 2>/dev/null | grep -q '^ii[[:space:]]'; then
     :
 elif command -v dpkg &>/dev/null && [ "$(dpkg --print-architecture 2>/dev/null)" = "amd64" ]; then
     if command -v gh &>/dev/null; then
-        TAG="$(gh api repos/obsidianmd/obsidian-releases/releases/latest --jq -r .tag_name)"
+        TAG="$(gh api repos/obsidianmd/obsidian-releases/releases/latest --jq '.tag_name')"
     else
         TAG="$(curl -fsSL https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r .tag_name)"
     fi

@@ -32,6 +32,17 @@ source ${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-autocomplete/zsh-autocomplete.plug
 
 source $ZSH/oh-my-zsh.sh
 
+# zsh-autocomplete 默认 prefix-needed yes：「命令 + 空格」后第二词 PREFIX 为空时不补全，git<space><Tab> 出不来 add/tag/submodule
+zstyle ':completion:*' prefix-needed false
+
+autoload -Uz add-zsh-hook
+# 每个 precmd 里 zsh-autocomplete 会清掉 menu 并设 menu no no-select，结果 Tab 常变成「直接塞进第一个候选」；在 hook 链里排在它后面，把 OMZ 的交互菜单救回来
+_autocomplete_reassert_menu_select() {
+  zstyle ':completion:*:*:*:*:default' menu select
+  zstyle ':completion:*:*:*:*:*' menu select
+}
+add-zsh-hook precmd _autocomplete_reassert_menu_select
+
 # zsh-autocomplete tuning
 # insert-unambiguous yes 会让 Tab 先吞掉整段无歧义匹配，体感像「一下补全整条」而不是逐项轮换
 zstyle ':autocomplete:*complete*:*' insert-unambiguous no
