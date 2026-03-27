@@ -9,12 +9,12 @@ if ! command -v brew &>/dev/null; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-# formula (jq: used by chezmoi run_onchange_obsidian-blog-plugins)
+# formula
 brew install chezmoi eza fzf gh git glab go jq kubecm kubernetes-cli \
     mkcert n neovim oath-toolkit ripgrep starship wget
 
 # cask
-brew install --cask kitty orbstack cursor google-chrome obsidian \
+brew install --cask kitty orbstack cursor google-chrome \
     font-monaspace-frozen font-monaspace-nf \
     betterdisplay eul jordanbaird-ice \
     mongodb-compass telegram vnc-viewer wechat wetype dingtalk mailmaster \
@@ -25,7 +25,7 @@ brew install --cask kitty orbstack cursor google-chrome obsidian \
 
 sudo apt-get update -qq
 
-# 基础工具（jq: run_onchange_obsidian-blog-plugins 需要）
+# 基础工具
 sudo apt-get install -y -qq git curl wget unzip build-essential jq
 
 # eza
@@ -161,32 +161,6 @@ if ! fc-list | grep -qi "LXGW WenKai"; then
     tar -xzf "$LXGW_TMP/lxgw.tar.gz" -C "$FONT_DIR/lxgw-wenkai" --strip-components=1
     rm -rf "$LXGW_TMP"
     fc-cache -f "$FONT_DIR"
-fi
-
-# Obsidian：官方在 GitHub 发 amd64 .deb（obsidianmd/obsidian-releases）；用 apt 装本地 deb 可自动拉依赖
-if dpkg -l obsidian 2>/dev/null | grep -q '^ii[[:space:]]'; then
-    :
-elif command -v dpkg &>/dev/null && [ "$(dpkg --print-architecture 2>/dev/null)" = "amd64" ]; then
-    if command -v gh &>/dev/null; then
-        TAG="$(gh api repos/obsidianmd/obsidian-releases/releases/latest --jq '.tag_name')"
-    else
-        TAG="$(curl -fsSL https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r .tag_name)"
-    fi
-    if [[ -n "$TAG" && "$TAG" != "null" ]]; then
-        VER="${TAG#v}"
-        DEB="obsidian_${VER}_amd64.deb"
-        OBS_TMP="$(mktemp -d)"
-        curl -fsSL -o "$OBS_TMP/$DEB" "https://github.com/obsidianmd/obsidian-releases/releases/download/${TAG}/${DEB}"
-        sudo apt-get install -y -qq "$OBS_TMP/$DEB" || {
-            sudo dpkg -i "$OBS_TMP/$DEB" || true
-            sudo apt-get install -y -qq -f
-        }
-        rm -rf "$OBS_TMP"
-    else
-        echo "Tip: 无法解析 Obsidian 最新版本 tag，请从 https://obsidian.md 手动安装"
-    fi
-else
-    echo "Tip: Obsidian .deb 脚本仅覆盖 Ubuntu amd64；其它系统/架构见 https://github.com/obsidianmd/obsidian-releases"
 fi
 
 {{ end -}}
