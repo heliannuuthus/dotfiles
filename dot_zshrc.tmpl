@@ -22,7 +22,7 @@ export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME=""  # starship 接管
 
-plugins=(git zsh-autosuggestions z fzf-tab zsh-syntax-highlighting)
+plugins=(gitfast zsh-autosuggestions z fzf-tab zsh-syntax-highlighting)
 
 # zsh-completions: 在 source oh-my-zsh 之前添加到 fpath
 fpath+=${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-completions/src
@@ -101,6 +101,11 @@ alias k="kubectl"
 alias vim="nvim"
 alias pn="pnpm"
 alias np="npm"
+
+# kubectl / gh completion
+(( $+commands[kubectl] )) && source <(kubectl completion zsh)
+compdef k=kubectl
+(( $+commands[gh] )) && source <(gh completion -s zsh)
 
 {{ if ne .chezmoi.os "darwin" -}}
 # Linux 特有别名 (Debian/Ubuntu 包名与上游不同)
