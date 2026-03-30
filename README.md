@@ -41,23 +41,17 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply heliannuuthus
 | `~/.config/gh/hosts.yml` | GitHub CLI — SSH protocol |
 | `~/.config/hostctl/profiles/` | Local hosts profiles |
 
-### macOS Only
+### Terminal (Kitty)
 
 | Target | Description |
 |--------|-------------|
-| `~/.config/iterm2/Geek-Black-Green.itermcolors` | iTerm2 color scheme |
-
-### Linux Only
-
-| Target | Description |
-|--------|-------------|
-| `~/.config/kitty/kitty.conf` | Kitty 终端配置：Monaspace + LXGW WenKai 字体、iTerm2 风格快捷键 |
+| `~/.config/kitty/kitty.conf` | Kitty 终端配置：Monaspace + LXGW WenKai 字体、分屏快捷键 |
 | `~/.config/kitty/theme.conf` | Symlink → kitty-themes/MaterialDark |
 | `~/.config/kitty/themes/` | 自定义主题：Catppuccin Mocha、Dracula、Nord |
 
 ### Auto-installed Dependencies
 
-**macOS (Homebrew):** chezmoi, eza, fzf, gh, git, glab, go, kubecm, kubectl, mkcert, n, neovim, oath-toolkit, ripgrep, starship, wget + iTerm2, OrbStack, Cursor, Google Chrome, Monaspace NF fonts, etc.
+**macOS (Homebrew):** chezmoi, eza, fzf, gh, git, glab, go, kubecm, kubectl, mkcert, n, neovim, oath-toolkit, ripgrep, starship, wget + Kitty, OrbStack, Cursor, Google Chrome, Monaspace NF fonts, etc.
 
 **Linux (apt + binary):** git, curl, wget, eza, fzf, ripgrep, bat, fd-find, dust, zoxide, neovim, kitty, starship, gh, kubectl, go, n, pnpm, pyenv + Monaspace Nerd Font, LXGW WenKai
 
@@ -68,7 +62,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply heliannuuthus
 | Mechanism | Usage |
 |-----------|-------|
 | Template conditionals (`{{ .chezmoi.os }}`) | PATH, fcitx5 env, Linux aliases (batcat/fdfind/dust), pyenv, pnpm, gh credential |
-| `.chezmoiignore` | Skip iTerm2 / `.zprofile` on Linux; skip kitty on macOS |
+| `.chezmoiignore` | Skip `.zprofile` on Linux |
 | `.chezmoiexternal.toml` | oh-my-zsh + 5 plugins + kitty-themes auto-downloaded as archives |
 | `run_onchange_` script | Platform-specific package installation |
 
@@ -103,9 +97,7 @@ chezmoi update               # pull + apply on another machine
 │   ├── pip/pip.conf                       # 清华 PyPI 镜像
 │   ├── gh/private_hosts.yml               # GitHub CLI
 │   ├── hostctl/profiles/test.toml         # local hosts
-│   ├── iterm2/                            # macOS only
-│   │   └── Geek-Black-Green.itermcolors   # color scheme
-│   └── kitty/                             # Linux only
+│   └── kitty/                             # cross-platform
 │       ├── kitty.conf                     # terminal config
 │       ├── symlink_theme.conf.tmpl        # → kitty-themes/MaterialDark
 │       └── themes/                        # custom themes
