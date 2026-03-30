@@ -72,8 +72,12 @@ active_border_color #7aa2f7
 inactive_border_color #444444
 
 # -------- 透明度和模糊 --------
+{{ if eq .chezmoi.os "darwin" -}}
+background_opacity 1.0
+{{ else -}}
 background_opacity 0.92
 dynamic_background_opacity yes
+{{ end -}}
 
 # -------- 声音 --------
 enable_audio_bell no
@@ -85,7 +89,12 @@ repaint_delay 10
 input_delay 3
 sync_to_monitor yes
 
-# -------- Linux 特定设置 --------
+# -------- 远程控制 (smart-splits.nvim 需要) --------
+allow_remote_control socket-only
+listen_on unix:/tmp/kitty-{kitty_pid}
+
+# -------- 平台特定设置 --------
+macos_titlebar_color background
 linux_display_server auto
 wayland_titlebar_color background
 
@@ -95,15 +104,79 @@ wayland_titlebar_color background
 
 clear_all_shortcuts no
 
+{{ if eq .chezmoi.os "darwin" -}}
+# ---- 自然文本编辑 (Natural Text Editing) ----
+map opt+left  send_text all \x1bb
+map opt+right send_text all \x1bf
+map cmd+left  send_text all \x01
+map cmd+right send_text all \x05
+map opt+backspace send_text all \x17
+map cmd+backspace send_text all \x15
+map cmd+z send_text all \x1f
+
+# ---- 标签页操作 (⌘) ----
+map cmd+t new_tab_with_cwd
+map cmd+w close_tab
+map cmd+shift+] next_tab
+map cmd+shift+[ previous_tab
+map cmd+1 goto_tab 1
+map cmd+2 goto_tab 2
+map cmd+3 goto_tab 3
+map cmd+4 goto_tab 4
+map cmd+5 goto_tab 5
+map cmd+6 goto_tab 6
+map cmd+7 goto_tab 7
+map cmd+8 goto_tab 8
+map cmd+9 goto_tab 9
+
+# ---- 窗口分割 ----
+map cmd+d launch --location=vsplit --cwd=current
+map cmd+shift+d launch --location=hsplit --cwd=current
+map cmd+enter launch --location=split --cwd=current
+
+# ---- 窗口导航 ----
+map cmd+opt+left neighboring_window left
+map cmd+opt+right neighboring_window right
+map cmd+opt+up neighboring_window up
+map cmd+opt+down neighboring_window down
+
+# ---- 调整窗口大小 ----
+map cmd+ctrl+left resize_window narrower 2
+map cmd+ctrl+right resize_window wider 2
+map cmd+ctrl+up resize_window taller 2
+map cmd+ctrl+down resize_window shorter 2
+
+# ---- 布局切换 ----
+map cmd+shift+l next_layout
+map cmd+shift+z toggle_layout stack
+
+# ---- 滚动 ----
+map cmd+up scroll_page_up
+map cmd+down scroll_page_down
+map cmd+home scroll_home
+map cmd+end scroll_end
+map cmd+g show_scrollback
+
+# ---- 字体大小 ----
+map cmd+plus change_font_size all +1.0
+map cmd+minus change_font_size all -1.0
+map cmd+0 change_font_size all 0
+
+# ---- 复制粘贴 ----
+map cmd+c copy_to_clipboard
+map cmd+v paste_from_clipboard
+
+# ---- 其他 ----
+map cmd+, load_config_file
+map cmd+ctrl+f toggle_fullscreen
+map cmd+shift+u kitten unicode_input
+map cmd+shift+escape kitty_shell window
+{{ else -}}
 # ---- 标签页操作 ----
 map ctrl+shift+t new_tab_with_cwd
 map ctrl+shift+w close_tab
 map ctrl+tab next_tab
 map ctrl+shift+tab previous_tab
-map ctrl+shift+. move_tab_forward
-map ctrl+shift+, move_tab_backward
-
-# 快速切换标签 (Alt+数字)
 map alt+1 goto_tab 1
 map alt+2 goto_tab 2
 map alt+3 goto_tab 3
@@ -124,8 +197,6 @@ map ctrl+shift+h neighboring_window left
 map ctrl+shift+l neighboring_window right
 map ctrl+shift+k neighboring_window up
 map ctrl+shift+j neighboring_window down
-
-# Alt + 方向键导航
 map alt+left neighboring_window left
 map alt+right neighboring_window right
 map alt+up neighboring_window up
@@ -136,10 +207,10 @@ map ctrl+shift+left resize_window narrower 2
 map ctrl+shift+right resize_window wider 2
 map ctrl+shift+up resize_window taller 2
 map ctrl+shift+down resize_window shorter 2
-map ctrl+shift+r resize_window reset
+map ctrl+shift+home resize_window reset
 
 # ---- 布局切换 ----
-map ctrl+shift+bracketright next_layout
+map ctrl+shift+l next_layout
 map ctrl+shift+z toggle_layout stack
 
 # ---- 滚动 ----
@@ -165,6 +236,19 @@ map ctrl+shift+f6 debug_config
 map ctrl+shift+f11 toggle_fullscreen
 map ctrl+shift+u kitten unicode_input
 map ctrl+shift+escape kitty_shell window
+{{ end -}}
+
+# ============================================
+# Kittens / 插件
+# ============================================
+
+# kitty-scrollback.nvim: 用 Neovim 浏览滚动历史
+action_alias kitty_scrollback_nvim kitten /Users/heliannuuthus/.local/share/nvim/lazy/kitty-scrollback.nvim/python/kitty_scrollback_nvim.py
+map kitty_mod+h kitty_scrollback_nvim
+map kitty_mod+g kitty_scrollback_nvim --config ksb_builtin_last_cmd_output
+
+# kitty-kitten-search: 终端历史增量搜索
+map kitty_mod+/ kitten search.py
 
 # ============================================
 # 包含主题文件
