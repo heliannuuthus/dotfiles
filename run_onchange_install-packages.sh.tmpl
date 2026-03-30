@@ -1,166 +1,295 @@
 #!/bin/bash
 set -euo pipefail
 
+_ts() { date '+%H:%M:%S'; }
+log()  { printf '\033[0;36m[%s]\033[0m %s\n' "$(_ts)" "$*"; }
+ok()   { printf '\033[0;32m[%s] ✓\033[0m %s\n' "$(_ts)" "$*"; }
+skip() { printf '\033[0;33m[%s] ⏭\033[0m %s (already installed)\n' "$(_ts)" "$*"; }
+warn() { printf '\033[0;31m[%s] ⚠\033[0m %s\n' "$(_ts)" "$*"; }
+
+CURL="curl --connect-timeout 15 --max-time 120 --retry 2"
+
+_can_sudo() {
+    sudo -n true 2>/dev/null
+}
+
+_need_sudo() {
+    if ! _can_sudo; then
+        warn "sudo 需要密码但无 TTY，跳过需要 sudo 的步骤"
+        warn "请先在终端执行 sudo -v 缓存密码后再重试"
+        return 1
+    fi
+}
+
 {{ if eq .chezmoi.os "darwin" -}}
 # --- macOS: Homebrew ---
 
 if ! command -v brew &>/dev/null; then
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    log "Installing Homebrew..."
+    /bin/bash -c "$($CURL -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     eval "$(/opt/homebrew/bin/brew shellenv)"
+    ok "Homebrew"
+else
+    skip "Homebrew"
 fi
 
-# formula
+log "Installing formulae..."
 brew install chezmoi eza fzf gh git glab go jq kubecm kubernetes-cli \
     mkcert n neovim oath-toolkit ripgrep starship wget
+ok "formulae"
 
-# cask
+log "Installing casks..."
 brew install --cask kitty orbstack cursor google-chrome \
     font-monaspace-frozen font-monaspace-nf \
     betterdisplay eul jordanbaird-ice \
     mongodb-compass telegram vnc-viewer wechat wetype dingtalk mailmaster \
     gcloud-cli
+ok "casks"
 
 {{ else -}}
-# --- Linux（仅针对 Ubuntu：24.04 LTS / 24.10 等，apt + dpkg；其它发行版不保证）---
+# --- Linux (Ubuntu amd64) ---
 
-sudo apt-get update -qq
+if _need_sudo; then
+    log "apt-get update..."
+    sudo apt-get update -qq
+    ok "apt-get update"
 
-# 基础工具
-sudo apt-get install -y -qq git curl wget unzip build-essential jq
+    log "Installing base tools..."
+    sudo apt-get install -y -qq git curl wget unzip build-essential jq
+    ok "base tools"
+else
+    warn "跳过 apt-get update 和基础工具安装"
+fi
 
 # eza
 if ! command -v eza &>/dev/null; then
-    sudo mkdir -p /etc/apt/keyrings
-    wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
-    sudo apt-get update -qq && sudo apt-get install -y -qq eza
+    if _can_sudo; then
+        log "Installing eza..."
+        sudo mkdir -p /etc/apt/keyrings
+        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
+        sudo apt-get update -qq && sudo apt-get install -y -qq eza
+        ok "eza"
+    else
+        warn "跳过 eza（需要 sudo）"
+    fi
+else
+    skip "eza"
 fi
 
 # fzf
 if ! command -v fzf &>/dev/null; then
-    sudo apt-get install -y -qq fzf
+    if _can_sudo; then
+        log "Installing fzf..."
+        sudo apt-get install -y -qq fzf
+        ok "fzf"
+    fi
+else
+    skip "fzf"
 fi
 
 # ripgrep
 if ! command -v rg &>/dev/null; then
-    sudo apt-get install -y -qq ripgrep
+    if _can_sudo; then
+        log "Installing ripgrep..."
+        sudo apt-get install -y -qq ripgrep
+        ok "ripgrep"
+    fi
+else
+    skip "ripgrep"
 fi
 
-# bat (batcat on Debian/Ubuntu)
+# bat
 if ! command -v batcat &>/dev/null; then
-    sudo apt-get install -y -qq bat
+    if _can_sudo; then
+        log "Installing bat..."
+        sudo apt-get install -y -qq bat
+        ok "bat"
+    fi
+else
+    skip "bat"
 fi
 
-# fd-find (fdfind on Debian/Ubuntu)
+# fd-find
 if ! command -v fdfind &>/dev/null; then
-    sudo apt-get install -y -qq fd-find
+    if _can_sudo; then
+        log "Installing fd-find..."
+        sudo apt-get install -y -qq fd-find
+        ok "fd-find"
+    fi
+else
+    skip "fd-find"
 fi
 
 # dust
 if ! command -v dust &>/dev/null; then
-    DUST_VERSION=$(curl -sL "https://api.github.com/repos/bootandy/dust/releases/latest" | grep -oP '"tag_name":\s*"v?\K[^"]+')
+    log "Installing dust..."
+    DUST_VERSION=$($CURL -sL "https://api.github.com/repos/bootandy/dust/releases/latest" | grep -oP '"tag_name":\s*"v?\K[^"]+')
     DUST_ARCH=$(dpkg --print-architecture)
     if [ "$DUST_ARCH" = "amd64" ]; then DUST_ARCH="x86_64"; fi
-    curl -sL "https://github.com/bootandy/dust/releases/latest/download/dust-v${DUST_VERSION}-${DUST_ARCH}-unknown-linux-gnu.tar.gz" | \
+    $CURL -sL "https://github.com/bootandy/dust/releases/latest/download/dust-v${DUST_VERSION}-${DUST_ARCH}-unknown-linux-gnu.tar.gz" | \
         sudo tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/dust'
+    ok "dust"
+else
+    skip "dust"
 fi
 
 # zoxide
 if ! command -v zoxide &>/dev/null; then
-    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+    log "Installing zoxide..."
+    $CURL -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+    ok "zoxide"
+else
+    skip "zoxide"
 fi
 
 # neovim
 if ! command -v nvim &>/dev/null; then
-    sudo apt-get install -y -qq neovim
+    if _can_sudo; then
+        log "Installing neovim..."
+        sudo apt-get install -y -qq neovim
+        ok "neovim"
+    fi
+else
+    skip "neovim"
 fi
 
 # kitty
 if ! command -v kitty &>/dev/null; then
-    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+    log "Installing kitty..."
+    $CURL -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
     mkdir -p ~/.local/bin
     ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
     cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/ 2>/dev/null || true
     cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/ 2>/dev/null || true
     sed -i "s|Icon=kitty|Icon=$(readlink -f ~)/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" \
         ~/.local/share/applications/kitty*.desktop 2>/dev/null || true
+    ok "kitty"
+else
+    skip "kitty"
 fi
 
 # starship
 if ! command -v starship &>/dev/null; then
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
+    log "Installing starship..."
+    $CURL -sS https://starship.rs/install.sh | sh -s -- -y
+    ok "starship"
+else
+    skip "starship"
 fi
 
 # gh (GitHub CLI)
 if ! command -v gh &>/dev/null; then
-    (type -p wget >/dev/null || sudo apt-get install wget -y) \
-    && sudo mkdir -p -m 755 /etc/apt/keyrings \
-    && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-    && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-    && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && sudo apt-get update -qq && sudo apt-get install -y -qq gh
+    if _can_sudo; then
+        log "Installing gh..."
+        (type -p wget >/dev/null || sudo apt-get install wget -y) \
+        && sudo mkdir -p -m 755 /etc/apt/keyrings \
+        && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+        && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+        && sudo apt-get update -qq && sudo apt-get install -y -qq gh
+        ok "gh"
+    fi
+else
+    skip "gh"
 fi
 
 # kubectl
 if ! command -v kubectl &>/dev/null; then
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl"
-    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-    rm kubectl
+    log "Installing kubectl..."
+    $CURL -LO "https://dl.k8s.io/release/$($CURL -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl"
+    if _can_sudo; then
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    else
+        install -m 0755 kubectl ~/.local/bin/kubectl
+    fi
+    rm -f kubectl
+    ok "kubectl"
+else
+    skip "kubectl"
 fi
 
-# Go (用户级多版本, ~/.go/goX.Y.Z/, current 软链指向当前版本)
+# Go
 if ! command -v go &>/dev/null; then
-    GO_VERSION=$(curl -sL 'https://go.dev/VERSION?m=text' | head -1)
+    log "Installing Go..."
+    GO_VERSION=$($CURL -sL 'https://go.dev/VERSION?m=text' | head -1)
     GOPATH_DIR="$HOME/.go"
     mkdir -p "$GOPATH_DIR"
-    curl -sLO "https://go.dev/dl/${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    $CURL -sLO "https://go.dev/dl/${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
     tar -C "$GOPATH_DIR" -xzf "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
     mv "$GOPATH_DIR/go" "$GOPATH_DIR/${GO_VERSION}"
     ln -sfn "$GOPATH_DIR/${GO_VERSION}" "$GOPATH_DIR/current"
     rm "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
     export PATH="$GOPATH_DIR/current/bin:$PATH"
+    ok "Go ($GO_VERSION)"
+else
+    skip "Go ($(go version 2>/dev/null | awk '{print $3}'))"
 fi
 
 # n (Node version manager)
 if ! command -v n &>/dev/null; then
-    curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | sudo bash -s lts
-    sudo npm install -g n
+    if _can_sudo; then
+        log "Installing n + Node LTS..."
+        $CURL -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | sudo bash -s lts
+        sudo npm install -g n
+        ok "n"
+    fi
+else
+    skip "n"
 fi
 
 # pnpm
 if ! command -v pnpm &>/dev/null; then
-    curl -fsSL https://get.pnpm.io/install.sh | sh -
+    log "Installing pnpm..."
+    $CURL -fsSL https://get.pnpm.io/install.sh | sh -
+    ok "pnpm"
+else
+    skip "pnpm"
 fi
 
 # pyenv
 if ! command -v pyenv &>/dev/null; then
-    sudo apt-get install -y -qq make libssl-dev zlib1g-dev libbz2-dev \
-        libreadline-dev libsqlite3-dev llvm libncursesw5-dev xz-utils \
-        tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-    curl https://pyenv.run | bash
+    log "Installing pyenv + build deps..."
+    if _can_sudo; then
+        sudo apt-get install -y -qq make libssl-dev zlib1g-dev libbz2-dev \
+            libreadline-dev libsqlite3-dev llvm libncursesw5-dev xz-utils \
+            tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+    fi
+    $CURL -sL https://pyenv.run | bash
+    ok "pyenv"
+else
+    skip "pyenv"
 fi
 
 # Monaspace Nerd Font
 FONT_DIR="$HOME/.local/share/fonts"
 if [ ! -d "$FONT_DIR/monaspace" ]; then
+    log "Installing Monaspace Nerd Font..."
     mkdir -p "$FONT_DIR/monaspace"
     MONO_TMP=$(mktemp -d)
-    curl -sL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Monaspace.tar.xz" -o "$MONO_TMP/Monaspace.tar.xz"
+    $CURL -sL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Monaspace.tar.xz" -o "$MONO_TMP/Monaspace.tar.xz"
     tar -xf "$MONO_TMP/Monaspace.tar.xz" -C "$FONT_DIR/monaspace"
     rm -rf "$MONO_TMP"
     fc-cache -f "$FONT_DIR"
+    ok "Monaspace Nerd Font"
+else
+    skip "Monaspace Nerd Font"
 fi
 
 # LXGW WenKai (霞鹜文楷)
 if ! fc-list | grep -qi "LXGW WenKai"; then
+    log "Installing LXGW WenKai..."
     mkdir -p "$FONT_DIR/lxgw-wenkai"
     LXGW_TMP=$(mktemp -d)
-    LXGW_VERSION=$(curl -sL "https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest" | grep -oP '"tag_name":\s*"\K[^"]+')
-    curl -sL "https://github.com/lxgw/LxgwWenKai/releases/download/${LXGW_VERSION}/lxgw-wenkai-v${LXGW_VERSION#v}.tar.gz" -o "$LXGW_TMP/lxgw.tar.gz"
+    LXGW_VERSION=$($CURL -sL "https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest" | grep -oP '"tag_name":\s*"\K[^"]+')
+    $CURL -sL "https://github.com/lxgw/LxgwWenKai/releases/download/${LXGW_VERSION}/lxgw-wenkai-v${LXGW_VERSION#v}.tar.gz" -o "$LXGW_TMP/lxgw.tar.gz"
     tar -xzf "$LXGW_TMP/lxgw.tar.gz" -C "$FONT_DIR/lxgw-wenkai" --strip-components=1
     rm -rf "$LXGW_TMP"
     fc-cache -f "$FONT_DIR"
+    ok "LXGW WenKai"
+else
+    skip "LXGW WenKai"
 fi
 
 {{ end -}}
@@ -169,10 +298,20 @@ fi
 
 # Rust
 if ! command -v rustup &>/dev/null; then
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    log "Installing Rust..."
+    $CURL --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    ok "Rust"
+else
+    skip "Rust ($(rustc --version 2>/dev/null | awk '{print $2}'))"
 fi
 
-# hostctl (通过 Go 安装)
+# hostctl
 if ! command -v hostctl &>/dev/null && command -v go &>/dev/null; then
+    log "Installing hostctl..."
     go install github.com/guumaster/hostctl@latest
+    ok "hostctl"
+elif command -v hostctl &>/dev/null; then
+    skip "hostctl"
 fi
+
+printf '\n\033[0;32m[%s] 🎉 All done!\033[0m\n' "$(_ts)"
