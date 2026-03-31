@@ -115,8 +115,10 @@ map cmd+backspace send_text all \x15
 map cmd+z send_text all \x1f
 
 # ---- 标签页操作 (⌘) ----
-map cmd+t new_tab_with_cwd
-map cmd+w close_tab
+# cmd+t 让给分屏；新建标签改为 cmd+shift+t
+map cmd+shift+t new_tab_with_cwd
+map cmd+w close_window
+map cmd+shift+w close_tab
 map cmd+shift+] next_tab
 map cmd+shift+[ previous_tab
 map cmd+1 goto_tab 1
@@ -129,10 +131,8 @@ map cmd+7 goto_tab 7
 map cmd+8 goto_tab 8
 map cmd+9 goto_tab 9
 
-# ---- 窗口分割 ----
-map cmd+d launch --location=vsplit --cwd=current
-map cmd+shift+d launch --location=hsplit --cwd=current
-map cmd+enter launch --location=split --cwd=current
+# ---- 窗口分割（--location=split 由布局自动选方向）----
+map cmd+t launch --location=split --cwd=current
 
 # ---- 窗口导航 ----
 map cmd+opt+left neighboring_window left
@@ -168,13 +168,15 @@ map cmd+v paste_from_clipboard
 
 # ---- 其他 ----
 map cmd+, load_config_file
+map cmd+enter toggle_fullscreen
 map cmd+ctrl+f toggle_fullscreen
 map cmd+shift+u kitten unicode_input
 map cmd+shift+escape kitty_shell window
 {{ else -}}
 # ---- 标签页操作 ----
 map ctrl+shift+t new_tab_with_cwd
-map ctrl+shift+w close_tab
+map ctrl+shift+w close_window
+map ctrl+shift+q close_tab
 map ctrl+tab next_tab
 map ctrl+shift+tab previous_tab
 map alt+1 goto_tab 1
@@ -187,9 +189,7 @@ map alt+7 goto_tab 7
 map alt+8 goto_tab 8
 map alt+9 goto_tab 9
 
-# ---- 窗口分割 ----
-map ctrl+shift+d launch --location=vsplit --cwd=current
-map ctrl+shift+e launch --location=hsplit --cwd=current
+# ---- 窗口分割（--location=split 由布局自动选方向）----
 map ctrl+shift+enter launch --location=split --cwd=current
 
 # ---- 窗口导航 ----
