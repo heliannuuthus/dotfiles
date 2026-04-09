@@ -3,11 +3,11 @@
 # ============================================
 
 # -------- 字体设置 --------
-# 英文字体：Monaspace Radon Frozen
-font_family      Monaspace Radon Frozen
-bold_font        Monaspace Radon Frozen SemiWide Medium
-italic_font      Monaspace Radon Frozen Italic
-bold_italic_font Monaspace Radon Frozen SemiWide Medium Italic
+# 英文字体：Monaspace Radon NF（Nerd Font 版，内置符号图标）
+font_family      Monaspace Radon NF
+bold_font        Monaspace Radon NF SemiWide SemiBold
+italic_font      auto
+bold_italic_font auto
 font_size        13.0
 
 # 中文字体：霞鹜文楷 (LXGW WenKai)
@@ -23,6 +23,10 @@ symbol_map U+3000-U+303F LXGW WenKai
 symbol_map U+FF00-U+FFEF LXGW WenKai
 # 中文括号等
 symbol_map U+2000-U+206F LXGW WenKai
+# Emoji（NF 不含彩色 Emoji，用系统字体 fallback）
+symbol_map U+1F300-U+1F9FF Apple Color Emoji
+symbol_map U+1FA00-U+1FA6F Apple Color Emoji
+symbol_map U+1FA70-U+1FAFF Apple Color Emoji
 
 # -------- 光标设置 --------
 cursor_shape underline
