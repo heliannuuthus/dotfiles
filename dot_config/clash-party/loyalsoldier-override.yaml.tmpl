@@ -1,0 +1,101 @@
+{{- $proxy := or (index . "clash_party_proxy_group") "节点选择" -}}
+# chezmoi apply -> ~/.config/clash-party/loyalsoldier-override.yaml
+# Clash Party：覆写 → 从该本地文件导入；可在 ~/.config/chezmoi/chezmoi.toml [data] 里设 clash_party_proxy_group
+
+geox-url:
+  geoip: https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+  geosite: https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+
+rule-providers:
+  reject:
+    type: http
+    behavior: domain
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt
+    path: ./ruleset/loyalsoldier-reject.txt
+    interval: 86400
+  private:
+    type: http
+    behavior: domain
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt
+    path: ./ruleset/loyalsoldier-private.txt
+    interval: 86400
+  icloud:
+    type: http
+    behavior: domain
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/icloud.txt
+    path: ./ruleset/loyalsoldier-icloud.txt
+    interval: 86400
+  apple:
+    type: http
+    behavior: domain
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/apple.txt
+    path: ./ruleset/loyalsoldier-apple.txt
+    interval: 86400
+  google:
+    type: http
+    behavior: domain
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/google.txt
+    path: ./ruleset/loyalsoldier-google.txt
+    interval: 86400
+  proxy:
+    type: http
+    behavior: domain
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.txt
+    path: ./ruleset/loyalsoldier-proxy.txt
+    interval: 86400
+  gfw:
+    type: http
+    behavior: domain
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/gfw.txt
+    path: ./ruleset/loyalsoldier-gfw.txt
+    interval: 86400
+  direct:
+    type: http
+    behavior: domain
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt
+    path: ./ruleset/loyalsoldier-direct.txt
+    interval: 86400
+  lancidr:
+    type: http
+    behavior: ipcidr
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt
+    path: ./ruleset/loyalsoldier-lancidr.txt
+    interval: 86400
+  cncidr:
+    type: http
+    behavior: ipcidr
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/cncidr.txt
+    path: ./ruleset/loyalsoldier-cncidr.txt
+    interval: 86400
+  telegramcidr:
+    type: http
+    behavior: ipcidr
+    format: text
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/telegramcidr.txt
+    path: ./ruleset/loyalsoldier-telegramcidr.txt
+    interval: 86400
+
++rules:
+  - RULE-SET,reject,REJECT
+  - RULE-SET,private,DIRECT
+  - RULE-SET,icloud,DIRECT
+  - RULE-SET,apple,DIRECT
+  - RULE-SET,google,{{ $proxy }}
+  - RULE-SET,proxy,{{ $proxy }}
+  - RULE-SET,gfw,{{ $proxy }}
+  - RULE-SET,direct,DIRECT
+  - RULE-SET,lancidr,DIRECT,no-resolve
+  - RULE-SET,cncidr,DIRECT,no-resolve
+  - RULE-SET,telegramcidr,{{ $proxy }},no-resolve
+  - GEOIP,LAN,DIRECT,no-resolve
+  - GEOIP,CN,DIRECT,no-resolve
