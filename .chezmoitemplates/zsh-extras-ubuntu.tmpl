@@ -1,0 +1,19 @@
+# Debian/Ubuntu 包名与上游不同
+alias cat="batcat --paging=never"
+alias bat="batcat"
+alias fd="fdfind"
+alias du="dust"
+alias nd="nerdctl"
+compdef _nerdctl nd
+
+eval "$(zoxide init zsh)"
+
+export CNI_PATH="$HOME/.local/share/cni/bin"
+
+export PNPM_HOME="$HOME/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

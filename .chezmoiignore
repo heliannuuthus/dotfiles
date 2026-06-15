@@ -1,6 +1,13 @@
 README.md
 LICENSE
 
-{{ if ne .chezmoi.os "darwin" }}
+# macOS only
+{{ if ne .profile "macos" }}
 .zprofile
+{{ end }}
+
+# 桌面环境专用（server 不需要 GUI / 终端模拟器 / 代理客户端）
+{{ if eq .profile "server" }}
+dot_config/kitty/
+dot_config/clash-party/
 {{ end }}
