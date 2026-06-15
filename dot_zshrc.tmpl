@@ -1,135 +1,15 @@
-export GOPATH="$HOME/.go"
-{{ if eq .chezmoi.os "darwin" -}}
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/bin:$HOME/.local/bin:$GOPATH/bin:$HOME/.cargo/bin:$PATH"
-{{ else -}}
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
+{{- if eq .profile "macos" -}}
+{{ template "zsh-path-macos" . }}
+{{- else if eq .profile "ubuntu" -}}
+{{ template "zsh-path-ubuntu" . }}
+{{- else -}}
+{{ template "zsh-path-server" . }}
+{{- end -}}
 
-# Fcitx5 输入法
-export QT_IM_MODULE=fcitx
-export XMODIFIERS=@im=fcitx
+{{ template "zsh-common" . }}
 
-export GOROOT="$HOME/.go/current"
-export PATH="$GOROOT/bin:$HOME/bin:$HOME/.local/bin:$GOPATH/bin:$HOME/.cargo/bin:$PATH"
-{{ end -}}
-
-# Rust 镜像 (rsproxy.cn)
-export RUSTUP_DIST_SERVER="https://rsproxy.cn"
-export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup"
-
-# Path to your Oh My Zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
-
-ZSH_THEME=""  # starship 接管
-
-plugins=(gitfast zsh-autosuggestions z fzf-tab zsh-syntax-highlighting)
-
-# zsh-completions: 在 source oh-my-zsh 之前添加到 fpath
-fpath+=${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-completions/src
-
-# zsh-autocomplete (must be sourced before oh-my-zsh/compinit)
-source ${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh
-
-source $ZSH/oh-my-zsh.sh
-
-# zsh-autocomplete 默认 prefix-needed yes：「命令 + 空格」后第二词 PREFIX 为空时不补全，git<space><Tab> 出不来 add/tag/submodule
-zstyle ':completion:*' prefix-needed false
-
-autoload -Uz add-zsh-hook
-# 每个 precmd 里 zsh-autocomplete 会清掉 menu 并设 menu no no-select，结果 Tab 常变成「直接塞进第一个候选」；在 hook 链里排在它后面，把 OMZ 的交互菜单救回来
-_autocomplete_reassert_menu_select() {
-  zstyle ':completion:*:*:*:*:default' menu select
-  zstyle ':completion:*:*:*:*:*' menu select
-}
-add-zsh-hook precmd _autocomplete_reassert_menu_select
-
-# zsh-autocomplete tuning
-# insert-unambiguous yes 会让 Tab 先吞掉整段无歧义匹配，体感像「一下补全整条」而不是逐项轮换
-zstyle ':autocomplete:*complete*:*' insert-unambiguous no
-# min-input>0 会在「行首只有一个词」时推迟出列表；设为 0 让候选尽量早出现
-zstyle ':autocomplete:*' min-input 0
-# 停键后多久拉补全；越小列表越早出现（过小可能略费 CPU）
-zstyle ':autocomplete:*' delay 0.05
-zstyle ':autocomplete:*:*' list-lines 8
-zstyle ':autocomplete:history-search-backward:*' list-lines 8
-
-zmodload -F zsh/terminfo p:terminfo 2>/dev/null
-# fzf 的 completion.zsh 会包一层 fzf-completion；显式指定回落 widget，避免偶发解析错
-export fzf_default_completion=expand-or-complete
-
-# 主键表用 expand-or-complete：先出完整候选/菜单，再在 menuselect 里 Tab 轮换
-bindkey '^I' expand-or-complete
-if [[ -n ${terminfo[kcbt]} ]]; then
-  bindkey "$terminfo[kcbt]" reverse-menu-complete
-fi
-# Tab/Shift-Tab also cycle inside menu
-bindkey -M menuselect '^I' menu-complete
-if [[ -n ${terminfo[kcbt]} ]]; then
-  bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
-fi
-# Enter in menu submits command line directly
-bindkey -M menuselect '\r' .accept-line
-# ← → in menu move cursor instead of selection
-bindkey -M menuselect '^[[D' .backward-char '^[OD' .backward-char
-bindkey -M menuselect '^[[C' .forward-char  '^[OC' .forward-char
-
-# ↑↓ restore normal history navigation (overrides zsh-autocomplete)
-bindkey '^[[A' up-line-or-history
-bindkey '^[[B' down-line-or-history
-bindkey '^[OA' up-line-or-history
-bindkey '^[OB' down-line-or-history
-
-# asdf version manager (v0.16+)
-export ASDF_DATA_DIR="$HOME/.asdf"
-[[ ":$PATH:" != *":$ASDF_DATA_DIR/shims:"* ]] && export PATH="$ASDF_DATA_DIR/shims:$PATH"
-
-# Starship prompt
-eval "$(starship init zsh)"
-
-# Editor
-export EDITOR='vim'
-export VISUAL='vim'
-
-# eza 替代 ls
-alias ls="eza --icons --group-directories-first"
-alias ll="eza -l --icons --group-directories-first"
-alias la="eza -la --icons --group-directories-first"
-alias lt="eza --tree --icons --group-directories-first"
-
-alias kcm="kubecm switch"
-alias k="kubectl"
-alias vim="nvim"
-alias pn="pnpm"
-alias np="npm"
-
-# kubectl / gh completion
-(( $+commands[kubectl] )) && source <(kubectl completion zsh)
-compdef k=kubectl
-(( $+commands[gh] )) && source <(gh completion -s zsh)
-
-{{ if ne .chezmoi.os "darwin" -}}
-# Linux 特有别名 (Debian/Ubuntu 包名与上游不同)
-alias cat="batcat --paging=never"
-alias bat="batcat"
-alias fd="fdfind"
-alias du="dust"
-alias nd="nerdctl"
-
-# nerdctl 补全
-compdef _nerdctl nd
-
-# zoxide (更智能的 cd)
-eval "$(zoxide init zsh)"
-
-# CNI
-export CNI_PATH="$HOME/.local/share/cni/bin"
-
-# pnpm
-export PNPM_HOME="$HOME/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-{{ end -}}
+{{- if eq .profile "ubuntu" -}}
+{{ template "zsh-extras-ubuntu" . }}
+{{- else if eq .profile "server" -}}
+{{ template "zsh-extras-server" . }}
+{{- end -}}

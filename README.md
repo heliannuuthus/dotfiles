@@ -1,6 +1,12 @@
 # dotfiles
 
-[chezmoi](https://www.chezmoi.io) managed dotfiles for macOS & Linux.
+[chezmoi](https://www.chezmoi.io) managed dotfiles，按 **profile** 区分三种环境：
+
+| Profile | 场景 | 典型机器 |
+|---------|------|----------|
+| `macos` | macOS 桌面 | MacBook + Homebrew + Kitty + OrbStack |
+| `ubuntu` | Linux 桌面 | Ubuntu/Debian 工作站 + fcitx5 + Kitty + 字体 |
+| `server` | Unix 无头服务器 | 远程 dev/CI 机，最小工具链 |
 
 ## Quick Start
 
@@ -8,103 +14,86 @@
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply heliannuuthus
 ```
 
-首次运行会交互式询问 Git name 和 email，随后自动完成：
+首次运行会询问 Git name / email；Linux 上还会选择 **ubuntu** 或 **server** profile。macOS 自动设为 `macos`。
 
-1. 安装系统依赖（Homebrew / apt）
-2. 下载 oh-my-zsh 及插件
-3. 部署所有配置文件
+### 已有机器切换 profile
+
+编辑 `~/.config/chezmoi/chezmoi.toml`：
+
+```toml
+[data]
+    profile = "server"   # macos | ubuntu | server
+```
+
+然后：
+
+```bash
+chezmoi apply
+```
 
 ## What's Included
 
-### Shell
+### Shell（所有 profile）
 
 | Target | Description |
 |--------|-------------|
-| `~/.zshrc` | oh-my-zsh + zsh-autocomplete/autosuggestions/completions/syntax-highlighting/fzf-tab, starship prompt, asdf, eza aliases |
+| `~/.zshrc` | OMZ + zsh-autocomplete/autosuggestions/fzf-tab + starship + asdf |
 | `~/.zshenv` | Cargo env + asdf PATH |
-| `~/.zprofile` | OrbStack init (macOS only) |
 | `~/.tool-versions` | asdf 全局版本 (nodejs 22.16.0, python 3.12.12) |
-| `~/.vimrc` | 完整 vim 配置：相对行号、智能搜索、缩进、鼠标、系统剪贴板 |
+| `~/.zprofile` | OrbStack init（仅 macos） |
 
-### Git
+### Profile 差异
 
-| Target | Description |
-|--------|-------------|
-| `~/.gitconfig` | Template — name/email from chezmoi data, includeIf multi-identity, gh credential (Linux) |
-| `~/.gitconfig-heliannuuthus` | Personal GitHub identity |
+| 组件 | macos | ubuntu | server |
+|------|:-----:|:------:|:------:|
+| Homebrew / apt 全量工具 | brew | apt | apt 最小集 |
+| fcitx5 / 输入法 | — | ✓ | — |
+| Kitty + 字体 + clash-party | ✓ | ✓ | — |
+| eza / bat / zoxide / nerdctl | ✓ | ✓ | — |
+| asdf + starship + gh + kubectl | ✓ | ✓ | ✓ |
+| Rust + hostctl | ✓ | ✓ | ✓ |
 
-### Tools
-
-| Target | Description |
-|--------|-------------|
-| `~/.config/starship.toml` | Starship prompt — compact format (symbol only, no version) |
-| `~/.config/pip/pip.conf` | 清华大学 PyPI 镜像 (HTTPS) |
-| `~/.config/gh/hosts.yml` | GitHub CLI — SSH protocol |
-| `~/.config/hostctl/profiles/` | Local hosts profiles |
-
-### Terminal (Kitty)
+### Git / Tools / Neovim
 
 | Target | Description |
 |--------|-------------|
-| `~/.config/kitty/kitty.conf` | Kitty 终端配置：Monaspace + LXGW WenKai 字体、分屏快捷键 |
-| `~/.config/kitty/theme.conf` | Symlink → kitty-themes/MaterialDark |
-| `~/.config/kitty/themes/` | 自定义主题：Catppuccin Mocha、Dracula、Nord |
+| `~/.gitconfig` | name/email + includeIf + gh credential (Linux) |
+| `~/.config/starship.toml` | no-runtime-versions preset |
+| `~/.config/pip/pip.conf` | 清华 PyPI 镜像 |
+| `~/.config/nvim/` | Neovim 配置 |
 
-### Auto-installed Dependencies
+## 架构
 
-**macOS (Homebrew):** chezmoi, eza, fzf, gh, git, glab, go, kubecm, kubectl, mkcert, n, neovim, oath-toolkit, ripgrep, starship, wget + Kitty, OrbStack, Cursor, Google Chrome, Monaspace NF fonts, etc.
-
-**Linux (apt + binary):** git, curl, wget, eza, fzf, ripgrep, bat, fd-find, dust, zoxide, neovim, kitty, starship, gh, kubectl, go, zsh, pnpm + asdf (nodejs/python) + Monaspace Nerd Font, LXGW WenKai
-
-**Cross-platform:** Rust (rustup), hostctl (go install)
-
-## Cross-platform Strategy
-
-| Mechanism | Usage |
-|-----------|-------|
-| Template conditionals (`{{ .chezmoi.os }}`) | PATH, fcitx5 env, Linux aliases (batcat/fdfind/dust), pnpm, gh credential |
-| `.chezmoiignore` | Skip `.zprofile` on Linux |
-| `.chezmoiexternal.toml` | oh-my-zsh + 5 plugins + kitty-themes auto-downloaded as archives |
-| `run_onchange_` script | Platform-specific package installation |
+```
+.
+├── .chezmoi.toml.tmpl              # name, email, profile
+├── .chezmoiexternal.toml.tmpl      # OMZ 插件；kitty-themes 仅非 server
+├── .chezmoiignore                  # 按 profile 跳过文件
+├── .chezmoitemplates/              # 可复用模板片段
+│   ├── zsh-*.tmpl                  # PATH / common / extras
+│   └── install-*.sh.tmpl           # macos / ubuntu / server / common
+├── dot_zshrc.tmpl                  # 组装 zsh 配置
+├── dot_zshenv / dot_tool-versions
+├── dot_zprofile.tmpl               # macOS OrbStack
+├── dot_config/                     # starship, kitty, nvim, gh, pip, ...
+└── run_onchange_install-packages.sh.tmpl
+```
 
 ## Daily Usage
 
 ```bash
-chezmoi edit ~/.zshrc        # edit in source dir
-chezmoi diff                 # preview changes
-chezmoi apply                # apply to home
-
-chezmoi cd                   # cd to source dir
-git add -A && git commit -m "update" && git push
-
-chezmoi update               # pull + apply on another machine
+chezmoi edit ~/.zshrc
+chezmoi diff
+chezmoi apply
+chezmoi update
 ```
 
-## Structure
+## Cross-platform 机制
 
-```
-.
-├── .chezmoi.toml.tmpl                     # interactive init config (name, email)
-├── .chezmoiexternal.toml                  # oh-my-zsh + plugins + kitty-themes
-├── .chezmoiignore                         # platform-conditional ignores
-├── dot_zshrc.tmpl                         # zsh config (templated)
-├── dot_zshenv                             # cargo env + asdf PATH
-├── dot_tool-versions                      # asdf global versions
-├── dot_zprofile.tmpl                      # OrbStack (darwin only)
-├── dot_vimrc                              # vim
-├── dot_gitconfig.tmpl                     # git config (templated)
-├── dot_gitconfig-heliannuuthus            # personal git identity
-├── dot_config/
-│   ├── starship.toml                      # prompt
-│   ├── pip/pip.conf                       # 清华 PyPI 镜像
-│   ├── gh/private_hosts.yml               # GitHub CLI
-│   ├── hostctl/profiles/test.toml         # local hosts
-│   └── kitty/                             # cross-platform
-│       ├── kitty.conf                     # terminal config
-│       ├── symlink_theme.conf.tmpl        # → kitty-themes/MaterialDark
-│       └── themes/                        # custom themes
-│           ├── catppuccin-mocha.conf
-│           ├── dracula.conf
-│           └── nord.conf
-└── run_onchange_install-packages.sh.tmpl  # dependency installer
-```
+| 机制 | 用途 |
+|------|------|
+| `profile` (chezmoi data) | macos / ubuntu / server 三分 |
+| `.chezmoitemplates/` | zsh 与 install 脚本模块化 |
+| `.chezmoiignore` | server 跳过 kitty/clash-party |
+| `.chezmoiexternal.toml.tmpl` | server 不下载 kitty-themes |
+| `run_onchange_` | 按 profile 安装依赖 |

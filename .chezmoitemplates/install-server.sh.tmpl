@@ -1,0 +1,78 @@
+# --- Linux server: 最小 dev 工具链 ---
+
+if _need_sudo; then
+    log "apt-get update..."
+    sudo apt-get update -qq
+    ok "apt-get update"
+
+    log "Installing base tools..."
+    sudo apt-get install -y -qq git curl wget unzip build-essential jq zsh \
+        libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+        libncursesw5-dev libncurses-dev xz-utils tk-dev libffi-dev liblzma-dev
+    ok "base tools"
+else
+    warn "跳过 apt-get update 和基础工具安装"
+fi
+
+if ! command -v starship &>/dev/null; then
+    log "Installing starship..."
+    $CURL -sS https://starship.rs/install.sh | sh -s -- -y
+    ok "starship"
+else
+    skip "starship"
+fi
+
+if ! command -v gh &>/dev/null; then
+    if _can_sudo; then
+        log "Installing gh..."
+        (type -p wget >/dev/null || sudo apt-get install wget -y) \
+        && sudo mkdir -p -m 755 /etc/apt/keyrings \
+        && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+        && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+        && sudo apt-get update -qq && sudo apt-get install -y -qq gh
+        ok "gh"
+    fi
+else
+    skip "gh"
+fi
+
+if ! command -v kubectl &>/dev/null; then
+    log "Installing kubectl..."
+    $CURL -LO "https://dl.k8s.io/release/$($CURL -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl"
+    if _can_sudo; then
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    else
+        install -m 0755 kubectl ~/.local/bin/kubectl
+    fi
+    rm -f kubectl
+    ok "kubectl"
+else
+    skip "kubectl"
+fi
+
+if ! command -v go &>/dev/null; then
+    log "Installing Go..."
+    GO_VERSION=$($CURL -sL 'https://go.dev/VERSION?m=text' | head -1)
+    GOPATH_DIR="$HOME/.go"
+    mkdir -p "$GOPATH_DIR"
+    $CURL -sLO "https://go.dev/dl/${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    tar -C "$GOPATH_DIR" -xzf "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    mv "$GOPATH_DIR/go" "$GOPATH_DIR/${GO_VERSION}"
+    ln -sfn "$GOPATH_DIR/${GO_VERSION}" "$GOPATH_DIR/current"
+    rm "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    export PATH="$GOPATH_DIR/current/bin:$PATH"
+    ok "Go ($GO_VERSION)"
+else
+    skip "Go ($(go version 2>/dev/null | awk '{print $3}'))"
+fi
+
+if [ "$(uname -s)" = "Linux" ] && command -v zsh &>/dev/null; then
+    ZSH_BIN="$(command -v zsh)"
+    CURRENT_SHELL="$(getent passwd "$(whoami)" | cut -d: -f7)"
+    if [ "$CURRENT_SHELL" != "$ZSH_BIN" ] && _can_sudo; then
+        log "Setting default shell to zsh..."
+        chsh -s "$ZSH_BIN" "$(whoami)" 2>/dev/null && ok "default shell → zsh" || warn "chsh failed"
+    fi
+fi
