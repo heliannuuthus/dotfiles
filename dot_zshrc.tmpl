@@ -79,9 +79,9 @@ bindkey '^[[B' down-line-or-history
 bindkey '^[OA' up-line-or-history
 bindkey '^[OB' down-line-or-history
 
-# n (Node 版本管理)
-export N_PREFIX=$HOME/.n
-export PATH=$N_PREFIX/bin:$PATH
+# asdf version manager (v0.16+)
+export ASDF_DATA_DIR="$HOME/.asdf"
+[[ ":$PATH:" != *":$ASDF_DATA_DIR/shims:"* ]] && export PATH="$ASDF_DATA_DIR/shims:$PATH"
 
 # Starship prompt
 eval "$(starship init zsh)"
@@ -123,11 +123,6 @@ eval "$(zoxide init zsh)"
 
 # CNI
 export CNI_PATH="$HOME/.local/share/cni/bin"
-
-# pyenv
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
 
 # pnpm
 export PNPM_HOME="$HOME/.local/share/pnpm"

@@ -20,9 +20,10 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply heliannuuthus
 
 | Target | Description |
 |--------|-------------|
-| `~/.zshrc` | oh-my-zsh + zsh-autocomplete/autosuggestions/completions/syntax-highlighting/fzf-tab, starship prompt, eza aliases |
-| `~/.zshenv` | Cargo env |
+| `~/.zshrc` | oh-my-zsh + zsh-autocomplete/autosuggestions/completions/syntax-highlighting/fzf-tab, starship prompt, asdf, eza aliases |
+| `~/.zshenv` | Cargo env + asdf PATH |
 | `~/.zprofile` | OrbStack init (macOS only) |
+| `~/.tool-versions` | asdf 全局版本 (nodejs 22.16.0, python 3.12.12) |
 | `~/.vimrc` | 完整 vim 配置：相对行号、智能搜索、缩进、鼠标、系统剪贴板 |
 
 ### Git
@@ -53,7 +54,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply heliannuuthus
 
 **macOS (Homebrew):** chezmoi, eza, fzf, gh, git, glab, go, kubecm, kubectl, mkcert, n, neovim, oath-toolkit, ripgrep, starship, wget + Kitty, OrbStack, Cursor, Google Chrome, Monaspace NF fonts, etc.
 
-**Linux (apt + binary):** git, curl, wget, eza, fzf, ripgrep, bat, fd-find, dust, zoxide, neovim, kitty, starship, gh, kubectl, go, n, pnpm, pyenv + Monaspace Nerd Font, LXGW WenKai
+**Linux (apt + binary):** git, curl, wget, eza, fzf, ripgrep, bat, fd-find, dust, zoxide, neovim, kitty, starship, gh, kubectl, go, zsh, pnpm + asdf (nodejs/python) + Monaspace Nerd Font, LXGW WenKai
 
 **Cross-platform:** Rust (rustup), hostctl (go install)
 
@@ -61,7 +62,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply heliannuuthus
 
 | Mechanism | Usage |
 |-----------|-------|
-| Template conditionals (`{{ .chezmoi.os }}`) | PATH, fcitx5 env, Linux aliases (batcat/fdfind/dust), pyenv, pnpm, gh credential |
+| Template conditionals (`{{ .chezmoi.os }}`) | PATH, fcitx5 env, Linux aliases (batcat/fdfind/dust), pnpm, gh credential |
 | `.chezmoiignore` | Skip `.zprofile` on Linux |
 | `.chezmoiexternal.toml` | oh-my-zsh + 5 plugins + kitty-themes auto-downloaded as archives |
 | `run_onchange_` script | Platform-specific package installation |
@@ -87,7 +88,8 @@ chezmoi update               # pull + apply on another machine
 ├── .chezmoiexternal.toml                  # oh-my-zsh + plugins + kitty-themes
 ├── .chezmoiignore                         # platform-conditional ignores
 ├── dot_zshrc.tmpl                         # zsh config (templated)
-├── dot_zshenv / dot_profile               # cargo env + PATH
+├── dot_zshenv                             # cargo env + asdf PATH
+├── dot_tool-versions                      # asdf global versions
 ├── dot_zprofile.tmpl                      # OrbStack (darwin only)
 ├── dot_vimrc                              # vim
 ├── dot_gitconfig.tmpl                     # git config (templated)

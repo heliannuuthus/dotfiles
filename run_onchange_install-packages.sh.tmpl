@@ -35,7 +35,7 @@ fi
 
 log "Installing formulae..."
 brew install chezmoi eza fzf gh git glab go jq kubecm kubernetes-cli \
-    mkcert n neovim oath-toolkit ripgrep starship wget
+    mkcert neovim oath-toolkit ripgrep starship wget zsh
 ok "formulae"
 
 log "Installing casks..."
@@ -55,7 +55,7 @@ if _need_sudo; then
     ok "apt-get update"
 
     log "Installing base tools..."
-    sudo apt-get install -y -qq git curl wget unzip build-essential jq
+    sudo apt-get install -y -qq git curl wget unzip build-essential jq zsh
     ok "base tools"
 else
     warn "跳过 apt-get update 和基础工具安装"
@@ -227,18 +227,6 @@ else
     skip "Go ($(go version 2>/dev/null | awk '{print $3}'))"
 fi
 
-# n (Node version manager)
-if ! command -v n &>/dev/null; then
-    if _can_sudo; then
-        log "Installing n + Node LTS..."
-        $CURL -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | sudo bash -s lts
-        sudo npm install -g n
-        ok "n"
-    fi
-else
-    skip "n"
-fi
-
 # pnpm
 if ! command -v pnpm &>/dev/null; then
     log "Installing pnpm..."
@@ -246,20 +234,6 @@ if ! command -v pnpm &>/dev/null; then
     ok "pnpm"
 else
     skip "pnpm"
-fi
-
-# pyenv
-if ! command -v pyenv &>/dev/null; then
-    log "Installing pyenv + build deps..."
-    if _can_sudo; then
-        sudo apt-get install -y -qq make libssl-dev zlib1g-dev libbz2-dev \
-            libreadline-dev libsqlite3-dev llvm libncursesw5-dev xz-utils \
-            tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-    fi
-    $CURL -sL https://pyenv.run | bash
-    ok "pyenv"
-else
-    skip "pyenv"
 fi
 
 # Monaspace Nerd Font
@@ -295,6 +269,107 @@ fi
 {{ end -}}
 
 # --- 跨平台 ---
+
+# asdf (Node/Python 版本管理，替代 n/pyenv)
+_asdf_arch() {
+    case "$(uname -m)" in
+        x86_64|amd64) echo "amd64" ;;
+        aarch64|arm64) echo "arm64" ;;
+        *) echo "amd64" ;;
+    esac
+}
+
+_asdf_os() {
+    case "$(uname -s)" in
+        Darwin) echo "darwin" ;;
+        Linux) echo "linux" ;;
+        *) echo "linux" ;;
+    esac
+}
+
+_asdf_plugin_add() {
+    local name="$1" repo="$2"
+    local dir="${ASDF_DATA_DIR:-$HOME/.asdf}/plugins/$name"
+    if [ -d "$dir" ]; then
+        return 0
+    fi
+    log "Adding asdf plugin: $name"
+    if asdf plugin add "$name" "https://github.com/${repo}.git" 2>/dev/null; then
+        ok "asdf plugin $name"
+        return 0
+    fi
+    mkdir -p "$dir"
+    $CURL -fsSL "https://codeload.github.com/${repo}/tar.gz/master" | tar -xz --strip-components=1 -C "$dir"
+    ok "asdf plugin $name (tarball)"
+}
+
+if ! command -v asdf &>/dev/null; then
+    log "Installing asdf..."
+    mkdir -p "$HOME/bin"
+    ASDF_VER="0.16.7"
+    ARCH="$(_asdf_arch)"
+    OS="$(_asdf_os)"
+    $CURL -fsSL -o /tmp/asdf.tar.gz \
+        "https://github.com/asdf-vm/asdf/releases/download/v${ASDF_VER}/asdf-v${ASDF_VER}-${OS}-${ARCH}.tar.gz"
+    tar -xzf /tmp/asdf.tar.gz -C "$HOME/bin"
+    chmod +x "$HOME/bin/asdf"
+    ok "asdf v${ASDF_VER}"
+else
+    skip "asdf"
+fi
+
+export ASDF_DATA_DIR="${ASDF_DATA_DIR:-$HOME/.asdf}"
+export PATH="$HOME/bin:$ASDF_DATA_DIR/shims:$PATH"
+
+_asdf_plugin_add nodejs asdf-vm/asdf-nodejs
+_asdf_plugin_add python asdf-community/asdf-python
+
+if [ "$(uname -s)" = "Linux" ] && _can_sudo; then
+    log "Installing Python build deps for asdf..."
+    sudo apt-get install -y -qq libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
+        libsqlite3-dev libncursesw5-dev libncurses-dev xz-utils tk-dev libffi-dev liblzma-dev
+    ok "Python build deps"
+fi
+
+PY_CACHE="/tmp/python-build-cache"
+mkdir -p "$PY_CACHE"
+if [ ! -f "$PY_CACHE/Python-3.12.12.tar.xz" ]; then
+    log "Prefetching Python 3.12.12 source..."
+    $CURL -fL -o "$PY_CACHE/Python-3.12.12.tar.xz" \
+        "https://mirrors.huaweicloud.com/python/3.12.12/Python-3.12.12.tar.xz" 2>/dev/null || \
+    $CURL -fL -o "$PY_CACHE/Python-3.12.12.tar.xz" \
+        "https://www.python.org/ftp/python/3.12.12/Python-3.12.12.tar.xz" || true
+fi
+export PYTHON_BUILD_CACHE_PATH="$PY_CACHE"
+
+if ! asdf list nodejs 2>/dev/null | grep -qx ' 22.16.0'; then
+    log "Installing nodejs 22.16.0 via asdf..."
+    asdf install nodejs 22.16.0
+    ok "nodejs 22.16.0"
+else
+    skip "nodejs 22.16.0"
+fi
+
+if ! asdf list python 2>/dev/null | grep -qx ' 3.12.12'; then
+    log "Installing python 3.12.12 via asdf..."
+    asdf install python 3.12.12
+    ok "python 3.12.12"
+else
+    skip "python 3.12.12"
+fi
+
+asdf set --home nodejs 22.16.0 2>/dev/null || true
+asdf set --home python 3.12.12 2>/dev/null || true
+asdf reshim 2>/dev/null || true
+
+if [ "$(uname -s)" = "Linux" ] && command -v zsh &>/dev/null; then
+    ZSH_BIN="$(command -v zsh)"
+    CURRENT_SHELL="$(getent passwd "$(whoami)" | cut -d: -f7)"
+    if [ "$CURRENT_SHELL" != "$ZSH_BIN" ] && _can_sudo; then
+        log "Setting default shell to zsh..."
+        chsh -s "$ZSH_BIN" "$(whoami)" 2>/dev/null && ok "default shell → zsh" || warn "chsh failed"
+    fi
+fi
 
 # Rust（使用 rsproxy.cn 镜像）
 if ! command -v rustup &>/dev/null; then
