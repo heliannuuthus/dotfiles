@@ -40,9 +40,12 @@ exact = true
 stripComponents = 1
 refreshPeriod = "168h"
 
+{{- if ne .profile "server" }}
+
 [".config/kitty/kitty-themes"]
 type = "archive"
 url = "https://github.com/dexpota/kitty-themes/archive/master.tar.gz"
 exact = true
 stripComponents = 1
 refreshPeriod = "168h"
+{{- end }}

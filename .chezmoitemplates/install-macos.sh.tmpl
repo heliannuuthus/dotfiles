@@ -1,0 +1,23 @@
+# --- macOS: Homebrew ---
+
+if ! command -v brew &>/dev/null; then
+    log "Installing Homebrew..."
+    /bin/bash -c "$($CURL -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    ok "Homebrew"
+else
+    skip "Homebrew"
+fi
+
+log "Installing formulae..."
+brew install chezmoi eza fzf gh git glab go jq kubecm kubernetes-cli \
+    mkcert neovim oath-toolkit ripgrep starship wget zsh
+ok "formulae"
+
+log "Installing casks..."
+brew install --cask kitty orbstack cursor google-chrome \
+    font-monaspace-frozen font-monaspace-nf \
+    betterdisplay eul jordanbaird-ice \
+    telegram wechat wetype \
+    gcloud-cli
+ok "casks"

@@ -1,0 +1,211 @@
+# --- Ubuntu desktop: 完整 Linux 工作站工具链 ---
+
+if _need_sudo; then
+    log "apt-get update..."
+    sudo apt-get update -qq
+    ok "apt-get update"
+
+    log "Installing base tools..."
+    sudo apt-get install -y -qq git curl wget unzip build-essential jq zsh
+    ok "base tools"
+else
+    warn "跳过 apt-get update 和基础工具安装"
+fi
+
+if ! command -v eza &>/dev/null; then
+    if _can_sudo; then
+        log "Installing eza..."
+        sudo mkdir -p /etc/apt/keyrings
+        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
+        sudo apt-get update -qq && sudo apt-get install -y -qq eza
+        ok "eza"
+    else
+        warn "跳过 eza（需要 sudo）"
+    fi
+else
+    skip "eza"
+fi
+
+if ! command -v fzf &>/dev/null; then
+    if _can_sudo; then
+        log "Installing fzf..."
+        sudo apt-get install -y -qq fzf
+        ok "fzf"
+    fi
+else
+    skip "fzf"
+fi
+
+if ! command -v rg &>/dev/null; then
+    if _can_sudo; then
+        log "Installing ripgrep..."
+        sudo apt-get install -y -qq ripgrep
+        ok "ripgrep"
+    fi
+else
+    skip "ripgrep"
+fi
+
+if ! command -v batcat &>/dev/null; then
+    if _can_sudo; then
+        log "Installing bat..."
+        sudo apt-get install -y -qq bat
+        ok "bat"
+    fi
+else
+    skip "bat"
+fi
+
+if ! command -v fdfind &>/dev/null; then
+    if _can_sudo; then
+        log "Installing fd-find..."
+        sudo apt-get install -y -qq fd-find
+        ok "fd-find"
+    fi
+else
+    skip "fd-find"
+fi
+
+if ! command -v dust &>/dev/null; then
+    log "Installing dust..."
+    DUST_VERSION=$($CURL -sL "https://api.github.com/repos/bootandy/dust/releases/latest" | grep -oP '"tag_name":\s*"v?\K[^"]+')
+    DUST_ARCH=$(dpkg --print-architecture)
+    if [ "$DUST_ARCH" = "amd64" ]; then DUST_ARCH="x86_64"; fi
+    $CURL -sL "https://github.com/bootandy/dust/releases/latest/download/dust-v${DUST_VERSION}-${DUST_ARCH}-unknown-linux-gnu.tar.gz" | \
+        sudo tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/dust'
+    ok "dust"
+else
+    skip "dust"
+fi
+
+if ! command -v zoxide &>/dev/null; then
+    log "Installing zoxide..."
+    $CURL -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+    ok "zoxide"
+else
+    skip "zoxide"
+fi
+
+if ! command -v nvim &>/dev/null; then
+    if _can_sudo; then
+        log "Installing neovim..."
+        sudo apt-get install -y -qq neovim
+        ok "neovim"
+    fi
+else
+    skip "neovim"
+fi
+
+if ! command -v kitty &>/dev/null; then
+    log "Installing kitty..."
+    $CURL -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+    mkdir -p ~/.local/bin
+    ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
+    cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/ 2>/dev/null || true
+    cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/ 2>/dev/null || true
+    sed -i "s|Icon=kitty|Icon=$(readlink -f ~)/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" \
+        ~/.local/share/applications/kitty*.desktop 2>/dev/null || true
+    ok "kitty"
+else
+    skip "kitty"
+fi
+
+if ! command -v starship &>/dev/null; then
+    log "Installing starship..."
+    $CURL -sS https://starship.rs/install.sh | sh -s -- -y
+    ok "starship"
+else
+    skip "starship"
+fi
+
+if ! command -v gh &>/dev/null; then
+    if _can_sudo; then
+        log "Installing gh..."
+        (type -p wget >/dev/null || sudo apt-get install wget -y) \
+        && sudo mkdir -p -m 755 /etc/apt/keyrings \
+        && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+        && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+        && sudo apt-get update -qq && sudo apt-get install -y -qq gh
+        ok "gh"
+    fi
+else
+    skip "gh"
+fi
+
+if ! command -v kubectl &>/dev/null; then
+    log "Installing kubectl..."
+    $CURL -LO "https://dl.k8s.io/release/$($CURL -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl"
+    if _can_sudo; then
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    else
+        install -m 0755 kubectl ~/.local/bin/kubectl
+    fi
+    rm -f kubectl
+    ok "kubectl"
+else
+    skip "kubectl"
+fi
+
+if ! command -v go &>/dev/null; then
+    log "Installing Go..."
+    GO_VERSION=$($CURL -sL 'https://go.dev/VERSION?m=text' | head -1)
+    GOPATH_DIR="$HOME/.go"
+    mkdir -p "$GOPATH_DIR"
+    $CURL -sLO "https://go.dev/dl/${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    tar -C "$GOPATH_DIR" -xzf "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    mv "$GOPATH_DIR/go" "$GOPATH_DIR/${GO_VERSION}"
+    ln -sfn "$GOPATH_DIR/${GO_VERSION}" "$GOPATH_DIR/current"
+    rm "${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz"
+    export PATH="$GOPATH_DIR/current/bin:$PATH"
+    ok "Go ($GO_VERSION)"
+else
+    skip "Go ($(go version 2>/dev/null | awk '{print $3}'))"
+fi
+
+if ! command -v pnpm &>/dev/null; then
+    log "Installing pnpm..."
+    $CURL -fsSL https://get.pnpm.io/install.sh | sh -
+    ok "pnpm"
+else
+    skip "pnpm"
+fi
+
+FONT_DIR="$HOME/.local/share/fonts"
+if [ ! -d "$FONT_DIR/monaspace" ]; then
+    log "Installing Monaspace Nerd Font..."
+    mkdir -p "$FONT_DIR/monaspace"
+    MONO_TMP=$(mktemp -d)
+    $CURL -sL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Monaspace.tar.xz" -o "$MONO_TMP/Monaspace.tar.xz"
+    tar -xf "$MONO_TMP/Monaspace.tar.xz" -C "$FONT_DIR/monaspace"
+    rm -rf "$MONO_TMP"
+    fc-cache -f "$FONT_DIR"
+    ok "Monaspace Nerd Font"
+else
+    skip "Monaspace Nerd Font"
+fi
+
+if ! fc-list | grep -qi "LXGW WenKai"; then
+    log "Installing LXGW WenKai..."
+    mkdir -p "$FONT_DIR/lxgw-wenkai"
+    LXGW_TMP=$(mktemp -d)
+    LXGW_VERSION=$($CURL -sL "https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest" | grep -oP '"tag_name":\s*"\K[^"]+')
+    $CURL -sL "https://github.com/lxgw/LxgwWenKai/releases/download/${LXGW_VERSION}/lxgw-wenkai-v${LXGW_VERSION#v}.tar.gz" -o "$LXGW_TMP/lxgw.tar.gz"
+    tar -xzf "$LXGW_TMP/lxgw.tar.gz" -C "$FONT_DIR/lxgw-wenkai" --strip-components=1
+    rm -rf "$LXGW_TMP"
+    fc-cache -f "$FONT_DIR"
+    ok "LXGW WenKai"
+else
+    skip "LXGW WenKai"
+fi
+
+if [ "$(uname -s)" = "Linux" ] && command -v zsh &>/dev/null; then
+    ZSH_BIN="$(command -v zsh)"
+    CURRENT_SHELL="$(getent passwd "$(whoami)" | cut -d: -f7)"
+    if [ "$CURRENT_SHELL" != "$ZSH_BIN" ] && _can_sudo; then
+        log "Setting default shell to zsh..."
+        chsh -s "$ZSH_BIN" "$(whoami)" 2>/dev/null && ok "default shell → zsh" || warn "chsh failed"
+    fi
+fi
