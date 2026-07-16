@@ -10,12 +10,20 @@ warn() { printf '\033[0;31m[%s] ⚠\033[0m %s\n' "$(_ts)" "$*"; }
 CURL="curl --connect-timeout 15 --max-time 120 --retry 2"
 
 _can_sudo() {
-    sudo -n true 2>/dev/null
+    [ "$(id -u)" -eq 0 ] || { command -v sudo >/dev/null && sudo -n true 2>/dev/null; }
+}
+
+_sudo() {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$@"
+    else
+        sudo "$@"
+    fi
 }
 
 _need_sudo() {
     if ! _can_sudo; then
-        warn "sudo 需要密码但无 TTY，跳过需要 sudo 的步骤"
+        warn "需要 root 权限，但当前用户没有免密 sudo，跳过系统级安装"
         warn "请先在终端执行 sudo -v 缓存密码后再重试"
         return 1
     fi
@@ -24,13 +32,13 @@ _need_sudo() {
 log "Profile: {{ .profile }}"
 
 {{- if eq .profile "macos" }}
-{{ template "install-macos" . }}
+{{ template "install-macos.sh.tmpl" . }}
 {{- else if eq .profile "ubuntu" }}
-{{ template "install-ubuntu" . }}
+{{ template "install-ubuntu.sh.tmpl" . }}
 {{- else }}
-{{ template "install-server" . }}
+{{ template "install-server.sh.tmpl" . }}
 {{- end }}
 
-{{ template "install-common" . }}
+{{ template "install-common.sh.tmpl" . }}
 
 printf '\n\033[0;32m[%s] 🎉 All done! (profile={{ .profile }})\033[0m\n' "$(_ts)"
