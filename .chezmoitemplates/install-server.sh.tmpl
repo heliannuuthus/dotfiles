@@ -2,11 +2,11 @@
 
 if _need_sudo; then
     log "apt-get update..."
-    sudo apt-get update -qq
+    _sudo apt-get update -qq
     ok "apt-get update"
 
     log "Installing base tools..."
-    sudo apt-get install -y -qq git curl wget unzip build-essential jq zsh \
+    _sudo apt-get install -y -qq git curl wget unzip build-essential jq zsh \
         libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
         libncursesw5-dev libncurses-dev xz-utils tk-dev libffi-dev liblzma-dev
     ok "base tools"
@@ -16,7 +16,12 @@ fi
 
 if ! command -v starship &>/dev/null; then
     log "Installing starship..."
-    $CURL -sS https://starship.rs/install.sh | sh -s -- -y
+    STARSHIP_BIN_DIR="/usr/local/bin"
+    if ! _can_sudo; then
+        STARSHIP_BIN_DIR="$HOME/.local/bin"
+        mkdir -p "$STARSHIP_BIN_DIR"
+    fi
+    $CURL -sS https://starship.rs/install.sh | sh -s -- -y -b "$STARSHIP_BIN_DIR"
     ok "starship"
 else
     skip "starship"
@@ -25,13 +30,13 @@ fi
 if ! command -v gh &>/dev/null; then
     if _can_sudo; then
         log "Installing gh..."
-        (type -p wget >/dev/null || sudo apt-get install wget -y) \
-        && sudo mkdir -p -m 755 /etc/apt/keyrings \
+        (type -p wget >/dev/null || _sudo apt-get install wget -y) \
+        && _sudo mkdir -p -m 755 /etc/apt/keyrings \
         && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-        && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-        && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-        && sudo apt-get update -qq && sudo apt-get install -y -qq gh
+        && cat $out | _sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+        && _sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | _sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+        && _sudo apt-get update -qq && _sudo apt-get install -y -qq gh
         ok "gh"
     fi
 else
@@ -42,9 +47,10 @@ if ! command -v kubectl &>/dev/null; then
     log "Installing kubectl..."
     $CURL -LO "https://dl.k8s.io/release/$($CURL -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl"
     if _can_sudo; then
-        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+        _sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
     else
-        install -m 0755 kubectl ~/.local/bin/kubectl
+        mkdir -p "$HOME/.local/bin"
+        install -m 0755 kubectl "$HOME/.local/bin/kubectl"
     fi
     rm -f kubectl
     ok "kubectl"

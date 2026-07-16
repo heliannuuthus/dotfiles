@@ -1,15 +1,15 @@
 {{- if eq .profile "macos" -}}
-{{ template "zsh-path-macos" . }}
+{{ template "zsh-path-macos.tmpl" . }}
 {{- else if eq .profile "ubuntu" -}}
-{{ template "zsh-path-ubuntu" . }}
+{{ template "zsh-path-ubuntu.tmpl" . }}
 {{- else -}}
-{{ template "zsh-path-server" . }}
+{{ template "zsh-path-server.tmpl" . }}
 {{- end -}}
 
-{{ template "zsh-common" . }}
+{{ template "zsh-common.tmpl" . }}
 
 {{- if eq .profile "ubuntu" -}}
-{{ template "zsh-extras-ubuntu" . }}
+{{ template "zsh-extras-ubuntu.tmpl" . }}
 {{- else if eq .profile "server" -}}
-{{ template "zsh-extras-server" . }}
+{{ template "zsh-extras-server.tmpl" . }}
 {{- end -}}
