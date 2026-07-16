@@ -55,7 +55,7 @@ _asdf_plugin_add python asdf-community/asdf-python
 
 if [ "$(uname -s)" = "Linux" ] && _can_sudo; then
     log "Installing Python build deps for asdf..."
-    sudo apt-get install -y -qq libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
+    _sudo apt-get install -y -qq libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
         libsqlite3-dev libncursesw5-dev libncurses-dev xz-utils tk-dev libffi-dev liblzma-dev 2>/dev/null || true
     ok "Python build deps"
 fi
