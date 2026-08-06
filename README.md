@@ -6,7 +6,7 @@
 |---------|------|----------|
 | `macos` | macOS 桌面 | MacBook + Homebrew + Kitty + OrbStack |
 | `ubuntu` | Linux 桌面 | Ubuntu/Debian 工作站 + fcitx5 + Kitty + 字体 |
-| `server` | Unix 无头服务器 | 远程 dev/CI 机，最小工具链 |
+| `server` | Debian/Ubuntu 无头服务器 | 远程开发机，精简但完整的 CLI 工具链 |
 
 ## Quick Start
 
@@ -49,8 +49,11 @@ chezmoi apply
 | Homebrew / apt 全量工具 | brew | apt | apt 最小集 |
 | fcitx5 / 输入法 | — | ✓ | — |
 | Kitty + 字体 + clash-party | ✓ | ✓ | — |
-| eza / bat / zoxide / nerdctl | ✓ | ✓ | — |
-| asdf + starship + gh + kubectl | ✓ | ✓ | ✓ |
+| eza / fzf / neovim / pnpm | ✓ | ✓ | ✓ |
+| bat / zoxide / nerdctl | ✓ | ✓ | — |
+| asdf + starship + gh | ✓ | ✓ | ✓ |
+| kubectl | ✓ | ✓ | — |
+| kubecm | ✓ | 可选 | — |
 | Rust + hostctl | ✓ | ✓ | ✓ |
 
 ### Git / Tools / Neovim

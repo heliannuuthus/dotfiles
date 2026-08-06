@@ -5,7 +5,8 @@ export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup"
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME=""
 
-plugins=(gitfast zsh-autosuggestions z fzf-tab zsh-syntax-highlighting)
+plugins=(gitfast zsh-autosuggestions z zsh-syntax-highlighting)
+(( $+commands[fzf] )) && plugins+=(fzf-tab)
 fpath+=${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-completions/src
 
 source ${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh
@@ -50,8 +51,17 @@ export ASDF_DATA_DIR="$HOME/.asdf"
 
 eval "$(starship init zsh)"
 
-export EDITOR='vim'
-export VISUAL='vim'
+if (( $+commands[nvim] )); then
+  alias vim="nvim"
+  export EDITOR='nvim'
+  export VISUAL='nvim'
+elif (( $+commands[vim] )); then
+  export EDITOR='vim'
+  export VISUAL='vim'
+else
+  export EDITOR='vi'
+  export VISUAL='vi'
+fi
 
 if (( $+commands[eza] )); then
   alias ls="eza --icons --group-directories-first"
@@ -64,12 +74,15 @@ else
   alias l='ls -CF'
 fi
 
-alias kcm="kubecm switch"
-alias k="kubectl"
-alias vim="nvim"
-alias pn="pnpm"
-alias np="npm"
+(( $+commands[pnpm] )) && alias pn="pnpm"
+(( $+commands[npm] )) && alias np="npm"
 
-(( $+commands[kubectl] )) && source <(kubectl completion zsh)
-compdef k=kubectl
+{{ if ne .profile "server" -}}
+(( $+commands[kubecm] )) && alias kcm="kubecm switch"
+if (( $+commands[kubectl] )); then
+  alias k="kubectl"
+  source <(kubectl completion zsh)
+  compdef k=kubectl
+fi
+{{ end -}}
 (( $+commands[gh] )) && source <(gh completion -s zsh)
