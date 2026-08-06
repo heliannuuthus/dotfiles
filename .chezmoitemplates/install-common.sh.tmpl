@@ -16,6 +16,25 @@ _asdf_os() {
     esac
 }
 
+if [ "$(uname -s)" = "Linux" ] && ! command -v eza &>/dev/null; then
+    if _can_sudo; then
+        log "Installing eza..."
+        _sudo mkdir -p /etc/apt/keyrings
+        $CURL -fsSL https://raw.githubusercontent.com/eza-community/eza/main/deb.asc \
+            | _sudo gpg --dearmor --batch --yes -o /etc/apt/keyrings/gierens.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" \
+            | _sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
+        _sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
+        _sudo apt-get update -qq
+        _sudo apt-get install -y -qq eza
+        ok "eza"
+    else
+        warn "跳过 eza（需要 sudo）"
+    fi
+else
+    skip "eza"
+fi
+
 _asdf_plugin_add() {
     local name="$1" repo="$2"
     local dir="${ASDF_DATA_DIR:-$HOME/.asdf}/plugins/$name"
@@ -90,6 +109,16 @@ fi
 asdf set --home nodejs 22.16.0 2>/dev/null || true
 asdf set --home python 3.12.12 2>/dev/null || true
 asdf reshim 2>/dev/null || true
+
+if ! command -v pnpm &>/dev/null; then
+    PNPM_VERSION="11.20.0"
+    log "Installing pnpm ${PNPM_VERSION}..."
+    npm install --global "pnpm@${PNPM_VERSION}"
+    asdf reshim nodejs 2>/dev/null || true
+    ok "pnpm ${PNPM_VERSION}"
+else
+    skip "pnpm"
+fi
 
 if ! command -v rustup &>/dev/null; then
     log "Installing Rust via rsproxy.cn..."

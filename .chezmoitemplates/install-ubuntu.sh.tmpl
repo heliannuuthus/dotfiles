@@ -6,35 +6,11 @@ if _need_sudo; then
     ok "apt-get update"
 
     log "Installing base tools..."
-    sudo apt-get install -y -qq git curl wget unzip build-essential jq zsh
+    sudo apt-get install -y -qq git curl wget unzip build-essential dirmngr gawk gnupg jq zsh \
+        fzf neovim
     ok "base tools"
 else
     warn "跳过 apt-get update 和基础工具安装"
-fi
-
-if ! command -v eza &>/dev/null; then
-    if _can_sudo; then
-        log "Installing eza..."
-        sudo mkdir -p /etc/apt/keyrings
-        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
-        sudo apt-get update -qq && sudo apt-get install -y -qq eza
-        ok "eza"
-    else
-        warn "跳过 eza（需要 sudo）"
-    fi
-else
-    skip "eza"
-fi
-
-if ! command -v fzf &>/dev/null; then
-    if _can_sudo; then
-        log "Installing fzf..."
-        sudo apt-get install -y -qq fzf
-        ok "fzf"
-    fi
-else
-    skip "fzf"
 fi
 
 if ! command -v rg &>/dev/null; then
@@ -87,16 +63,6 @@ else
     skip "zoxide"
 fi
 
-if ! command -v nvim &>/dev/null; then
-    if _can_sudo; then
-        log "Installing neovim..."
-        sudo apt-get install -y -qq neovim
-        ok "neovim"
-    fi
-else
-    skip "neovim"
-fi
-
 if ! command -v kitty &>/dev/null; then
     log "Installing kitty..."
     $CURL -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
@@ -124,11 +90,12 @@ if ! command -v gh &>/dev/null; then
         log "Installing gh..."
         (type -p wget >/dev/null || sudo apt-get install wget -y) \
         && sudo mkdir -p -m 755 /etc/apt/keyrings \
-        && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-        && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+        && out=$(mktemp) && wget -nv -O"$out" https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        && sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg <"$out" >/dev/null \
         && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
         && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-        && sudo apt-get update -qq && sudo apt-get install -y -qq gh
+        && sudo apt-get update -qq && sudo apt-get install -y -qq gh \
+        && rm -f "$out"
         ok "gh"
     fi
 else
@@ -163,14 +130,6 @@ if ! command -v go &>/dev/null; then
     ok "Go ($GO_VERSION)"
 else
     skip "Go ($(go version 2>/dev/null | awk '{print $3}'))"
-fi
-
-if ! command -v pnpm &>/dev/null; then
-    log "Installing pnpm..."
-    $CURL -fsSL https://get.pnpm.io/install.sh | sh -
-    ok "pnpm"
-else
-    skip "pnpm"
 fi
 
 FONT_DIR="$HOME/.local/share/fonts"
