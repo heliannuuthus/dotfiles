@@ -1,5 +1,6 @@
 README.md
 LICENSE
+tests/
 
 # macOS only
 {{ if ne .profile "macos" }}
@@ -9,5 +10,6 @@ LICENSE
 # 桌面环境专用（server 不需要 GUI / 终端模拟器 / 代理客户端）
 {{ if eq .profile "server" }}
 .config/kitty/
+.config/rio/
 .config/clash-party/
 {{ end }}
