@@ -167,6 +167,20 @@ class RioTemplateTests(unittest.TestCase):
                 }
                 self.assertIn("tests/", patterns)
 
+    def test_kitty_is_not_installed_or_managed(self):
+        self.assertFalse((ROOT / "dot_config/kitty").exists())
+        self.assertFalse((ROOT / "dot_config/nvim/lua/plugins/kitty-scrollback.lua").exists())
+        for case in PROFILES:
+            for relative_path in (
+                "run_onchange_install-packages.sh.tmpl",
+                ".chezmoiexternal.toml.tmpl",
+                ".chezmoiignore",
+                "dot_zshrc.tmpl",
+                "dot_config/rio/config.toml.tmpl",
+            ):
+                with self.subTest(profile=case[0], architecture=case[2], template=relative_path):
+                    self.assertNotRegex(self.render(relative_path, *case).lower(), r"\b(?:kitty|kitten)\b")
+
     def test_server_excludes_rio_and_desktop_shell_integration(self):
         server = ("server", "linux", "amd64")
         ignored = self.render(".chezmoiignore", *server)
@@ -206,7 +220,7 @@ class RioTemplateTests(unittest.TestCase):
             self.skipTest("zsh is unavailable; Rio prompt-mark behavior was not checked")
         hook = str(ROOT / "dot_config/rio/zsh-integration.zsh")
         script = 'source "$1"; source "$1"; for hook_fn in $precmd_functions; do "$hook_fn"; done'
-        for interactive, terminal, expected in ((True, "rio", b"\x1b]133;A\x07"), (True, "kitty", b""), (False, "rio", b"")):
+        for interactive, terminal, expected in ((True, "rio", b"\x1b]133;A\x07"), (True, "other-terminal", b""), (False, "rio", b"")):
             with self.subTest(interactive=interactive, terminal=terminal):
                 environment = os.environ.copy()
                 environment["TERM_PROGRAM"] = terminal

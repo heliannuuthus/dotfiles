@@ -1,4 +1,4 @@
-  # 与现有 Kitty 相同的自然文本编辑。
+  # 自然文本编辑。
   # 原生搜索栏请用 Ctrl+U 清空、Ctrl+W 删词、Backspace 删除；勿用 Option 方向键。
   { key = "left", with = "option", esc = "\u001bb" },
   { key = "right", with = "option", esc = "\u001bf" },
@@ -9,7 +9,7 @@
   { key = "z", with = "super", esc = "\u001f" },
   { key = "c", with = "super", action = "Copy" },
 
-  # 标签页：保留 Kitty 的键位；Rio 标签编号从 0 开始。
+  # 标签页：保留既有键位；Rio 标签编号从 0 开始。
   { key = "t", with = "super | shift", action = "CreateTab" },
   { key = "n", with = "super", action = "CreateWindow" },
   { key = "w", with = "super", action = "CloseSplitOrTab" },
@@ -67,7 +67,7 @@
   { key = "f", with = "super | control", action = "ToggleFullscreen" },
   { key = ",", with = "super", action = "OpenConfigEditor" },
   # 保存配置后 Rio 自动重载；Cmd+, 打开 Neovim 编辑配置。
-  # 用 Rio 命令面板替代 Kitty 专用的内部调试 shell。
+  # Rio 原生命令面板。
   { key = "escape", with = "super | shift", action = "OpenCommandPalette" },
-  # 原 Unicode kitten 改为 macOS 系统字符查看器。
+  # macOS 系统字符查看器。
   { key = "u", with = "super | shift", action = "Run(/usr/bin/open -a CharacterPalette)" },

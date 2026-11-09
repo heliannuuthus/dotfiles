@@ -1,7 +1,7 @@
 # Rio 0.5.29 跨平台配置，由 chezmoi 按系统生成。
 # 不依赖 tmux；不修改 Rio 源码。
 # 配置键以 v0.5.29 tag 为准，官网部分文档描述的是更新的开发版本。
-# 原 Kitty 特有的布局循环、stack 放大和临时分屏标题没有原生对应动作。
+# 不提供自动布局循环、单分屏放大或临时分屏标题。
 
 # 每个分屏统一由 panel.margin 提供 16px 留白，避免外侧叠加。
 margin = [0]
@@ -40,7 +40,7 @@ column-gap = 0
 family = "LXGW WenKai Mono"
 size = 16
 symbol-map = [
-  # Rio 的 end 不包含端点，故比 Kitty 区间的最后码位多 1。
+  # Rio 的 end 不包含端点，Unicode 范围使用 [start, end)。
   { start = "4E00", end = "A000", font-family = "LXGW WenKai Mono" },
   { start = "3400", end = "4DC0", font-family = "LXGW WenKai Mono" },
   { start = "F900", end = "FB00", font-family = "LXGW WenKai Mono" },
@@ -93,7 +93,7 @@ program = "/usr/bin/nvim"
 args = []
 
 [colors]
-# Kitty 的 MaterialDark 配色，使用低饱和灰蓝色的输入/选区高亮。
+# Material Dark 配色，使用低饱和灰蓝色的输入/选区高亮。
 # Rio 0.5.29 将 cursor 同时作为中文预编辑的底色，预编辑文字为终端背景色。
 background = "#222221"
 foreground = "#e4e4e4"
@@ -134,7 +134,7 @@ keys = [
 # URL 提示：macOS 使用 Cmd+Shift+E，Linux 使用 Ctrl+Shift+E；点击使用相同修饰键。
 # Rio 0.5.29 的纯文本长 URL 跨软换行时，请用鼠标；键盘提示尚不拼接物理行。
 [[hints.rules]]
-regex = '(?:https?|ftps?|file|gemini|git|gopher|ircs?|mailto|news|sftp|ssh|kitty):[^\s<>"`\\]+'
+regex = '(?:https?|ftps?|file|gemini|git|gopher|ircs?|mailto|news|sftp|ssh):[^\s<>"`\\]+'
 hyperlinks = true
 post-processing = true
 persist = false

@@ -49,7 +49,7 @@ chezmoi apply
 | Homebrew / apt 全量工具 | brew | apt | apt 最小集 |
 | fcitx5 / 输入法 | — | ✓ | — |
 | Rio + 字体 | ✓ | ✓ | — |
-| Kitty 兼容配置 + clash-party | ✓ | ✓ | — |
+| clash-party 配置 | ✓ | ✓ | — |
 | eza / fzf / neovim / pnpm | ✓ | ✓ | ✓ |
 | bat / zoxide / nerdctl | ✓ | ✓ | — |
 | asdf + starship + gh | ✓ | ✓ | ✓ |
@@ -68,14 +68,14 @@ chezmoi apply
 
 ### 桌面终端：Rio
 
-`macos`、`ubuntu` profile 会安装 Rio，并部署 `~/.config/rio/config.toml` 与 Zsh 提示符标记脚本；`server` 不安装或部署这些桌面终端配置。Rio 存在时，桌面 Shell 设置 `TERMINAL=rio`，不改系统的默认终端关联。原有 Kitty 安装和配置保留作兼容。
+`macos`、`ubuntu` profile 会安装 Rio，并部署 `~/.config/rio/config.toml` 与 Zsh 提示符标记脚本；`server` 不安装或部署这些桌面终端配置。Rio 是唯一托管的桌面终端；存在时，桌面 Shell 设置 `TERMINAL=rio`，不改系统的默认终端关联。
 
 配置以 **Rio 0.5.29** 核对，保留 Material Dark 配色、**LXGW WenKai Mono 16pt**、每个分屏 **16px 留白**、1px 分隔线和非当前分屏的柔和调暗：
 
 - macOS 使用 `NativeTab`，标题跟随当前分屏，全屏标题栏显隐由系统控制；Linux 使用 `Tab`，渲染结果不包含 macOS 专属的 `NativeTab`。
 - macOS 使用 Apple Color Emoji 和对应 Homebrew 路径的 Neovim；Ubuntu 安装 Noto Color Emoji，并使用 `/usr/bin/nvim`。
 - 中文组词背景在此版 Rio 中与光标颜色共用，因此使用可读的灰蓝色；普通选区使用深蓝灰底、浅色字。
-- 历史浏览使用 Rio 原生 Vi 模式，提示符跳转由仅在 Rio 中加载的 Zsh hook 提供。Kitty 的自动布局、完整焦点外框和 kittens API 没有原生等价配置；保留的 `kitty-scrollback.nvim` 仅供 Kitty 使用。
+- 历史浏览使用 Rio 原生 Vi 模式，提示符跳转由仅在 Rio 中加载的 Zsh hook 提供；不提供自动布局、完整焦点外框或 Neovim 滚动历史覆盖窗。
 
 macOS 和 Linux 通过 chezmoi 条件生成各自键位，不会把 `Super` 机械替换后造成按键冲突：
 
@@ -114,7 +114,7 @@ RIO_LINUX_BACKEND=wayland chezmoi apply
 ```
 .
 ├── .chezmoi.toml.tmpl              # name, email, profile
-├── .chezmoiexternal.toml.tmpl      # OMZ 插件；kitty-themes 仅非 server
+├── .chezmoiexternal.toml.tmpl      # OMZ 与 Zsh 插件归档
 ├── .chezmoiignore                  # 按 profile 跳过文件
 ├── .chezmoitemplates/              # 可复用模板片段
 │   ├── zsh-*.tmpl                  # PATH / common / extras
@@ -122,7 +122,7 @@ RIO_LINUX_BACKEND=wayland chezmoi apply
 ├── dot_zshrc.tmpl                  # 组装 zsh 配置
 ├── dot_zshenv / dot_tool-versions
 ├── dot_zprofile.tmpl               # macOS OrbStack
-├── dot_config/                     # starship, rio, kitty, nvim, gh, pip, ...
+├── dot_config/                     # starship, rio, nvim, gh, pip, ...
 └── run_onchange_install-packages.sh.tmpl
 ```
 
@@ -141,8 +141,8 @@ chezmoi update
 |------|------|
 | `profile` (chezmoi data) | macos / ubuntu / server 三分 |
 | `.chezmoitemplates/` | zsh 与 install 脚本模块化 |
-| `.chezmoiignore` | server 跳过 rio/kitty/clash-party |
-| `.chezmoiexternal.toml.tmpl` | server 不下载 kitty-themes |
+| `.chezmoiignore` | server 跳过 rio/clash-party |
+| `.chezmoiexternal.toml.tmpl` | 各 profile 共用 OMZ 与 Zsh 插件 |
 | `run_onchange_` | 按 profile 安装依赖 |
 
 ## 配置验证
