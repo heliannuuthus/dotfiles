@@ -11,8 +11,10 @@
 ## Quick Start
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply heliannuuthus
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply YOUR_GITHUB_USERNAME
 ```
+
+将 `YOUR_GITHUB_USERNAME` 替换为存放这份 dotfiles 仓库的 GitHub 用户名。
 
 首次运行会询问 Git name / email；Linux 上还会选择 **ubuntu** 或 **server** profile。macOS 自动设为 `macos`。
 
@@ -61,10 +63,12 @@ chezmoi apply
 
 | Target | Description |
 |--------|-------------|
-| `~/.gitconfig` | name/email + includeIf + gh credential (Linux) |
+| `~/.gitconfig` | 本机 name/email + gh credential (Linux) |
 | `~/.config/starship.toml` | no-runtime-versions preset |
 | `~/.config/pip/pip.conf` | 清华 PyPI 镜像 |
 | `~/.config/nvim/` | Neovim 配置 |
+
+Git 身份由本机 chezmoi data 提供，不托管个人目录专属身份或仓库 URL 重写。GitHub 登录状态与 hostctl 主机映射由每台机器单独管理，不同步到仓库；首次使用 GitHub CLI 时请运行 `gh auth login`。
 
 ### 桌面终端：Rio
 
@@ -122,7 +126,7 @@ RIO_LINUX_BACKEND=wayland chezmoi apply
 ├── dot_zshrc.tmpl                  # 组装 zsh 配置
 ├── dot_zshenv / dot_tool-versions
 ├── dot_zprofile.tmpl               # macOS OrbStack
-├── dot_config/                     # starship, rio, nvim, gh, pip, ...
+├── dot_config/                     # starship, rio, nvim, pip, ...
 └── run_onchange_install-packages.sh.tmpl
 ```
 
