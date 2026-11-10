@@ -1,0 +1,73 @@
+  # 自然文本编辑。
+  # 原生搜索栏请用 Ctrl+U 清空、Ctrl+W 删词、Backspace 删除；勿用 Option 方向键。
+  { key = "left", with = "option", esc = "\u001bb" },
+  { key = "right", with = "option", esc = "\u001bf" },
+  { key = "left", with = "super", esc = "\u0001" },
+  { key = "right", with = "super", esc = "\u0005" },
+  { key = "backspace", with = "option", esc = "\u0017" },
+  { key = "backspace", with = "super", esc = "\u0015" },
+  { key = "z", with = "super", esc = "\u001f" },
+  { key = "c", with = "super", action = "Copy" },
+
+  # 标签页：保留既有键位；Rio 标签编号从 0 开始。
+  { key = "t", with = "super | shift", action = "CreateTab" },
+  { key = "n", with = "super", action = "CreateWindow" },
+  { key = "w", with = "super", action = "CloseSplitOrTab" },
+  { key = "w", with = "super | shift", action = "CloseTab" },
+  { key = "]", with = "super | shift", action = "SelectNextTab" },
+  { key = "[", with = "super | shift", action = "SelectPrevTab" },
+  { key = "1", with = "super", action = "SelectTab(0)" },
+  { key = "2", with = "super", action = "SelectTab(1)" },
+  { key = "3", with = "super", action = "SelectTab(2)" },
+  { key = "4", with = "super", action = "SelectTab(3)" },
+  { key = "5", with = "super", action = "SelectTab(4)" },
+  { key = "6", with = "super", action = "SelectTab(5)" },
+  { key = "7", with = "super", action = "SelectTab(6)" },
+  { key = "8", with = "super", action = "SelectTab(7)" },
+  { key = "9", with = "super", action = "SelectTab(8)" },
+
+  # 分屏：原来的自动方向改为明确方向，继承当前工作目录。
+  { key = "t", with = "super", action = "SplitRight" },
+  { key = "d", with = "super", action = "SplitDown" },
+  # Rio 只有前/后循环切换；左右/上下两组键都保留为别名。
+  { key = "left", with = "super | option", action = "SelectPrevSplit" },
+  { key = "up", with = "super | option", action = "SelectPrevSplit" },
+  { key = "right", with = "super | option", action = "SelectNextSplit" },
+  { key = "down", with = "super | option", action = "SelectNextSplit" },
+  { key = "left", with = "super | control", action = "MoveDividerLeft" },
+  { key = "right", with = "super | control", action = "MoveDividerRight" },
+  { key = "up", with = "super | control", action = "MoveDividerUp" },
+  { key = "down", with = "super | control", action = "MoveDividerDown" },
+
+  # 滚动与历史：保留页滚动；用原生 Vi 模式替代 less/Neovim 覆盖窗。
+  { key = "up", with = "super", action = "ScrollPageUp" },
+  { key = "down", with = "super", action = "ScrollPageDown" },
+  { key = "home", with = "super", action = "ScrollToTop" },
+  { key = "end", with = "super", action = "ScrollToBottom" },
+  { key = "g", with = "super", action = "ToggleViMode" },
+  { key = "h", with = "control | shift", action = "ToggleViMode" },
+  # 原来“上一条命令输出”改为跳到上一条提示符；可再按 Cmd+G 浏览。
+  { key = "g", with = "control | shift", mode = "~alt", action = "ScrollToPrevPrompt" },
+  { key = "up", with = "super | shift", mode = "~alt", action = "ScrollToPrevPrompt" },
+  { key = "down", with = "super | shift", mode = "~alt", action = "ScrollToNextPrompt" },
+  { key = "/", with = "control | shift", action = "SearchForward" },
+  { key = "f", with = "super", action = "SearchForward" },
+
+  # 保留原生 Cmd+V。当前 OMP 会在空 bracketed paste 时读取图片剪贴板。
+  # 图文混合剪贴板若优先粘贴图片，用 Ctrl+V 或 Cmd+Shift+V。
+  { key = "v", with = "super", action = "Paste" },
+  { key = "v", with = "super | shift", esc = "\u0016" },
+
+  # Shift 将 '=' 变为 '+'；Rio 用不带 Shift 的键匹配。
+  { key = "=", with = "super | shift", action = "IncreaseFontSize" },
+  { key = "=", with = "super", action = "IncreaseFontSize" },
+  { key = "-", with = "super", action = "DecreaseFontSize" },
+  { key = "0", with = "super", action = "ResetFontSize" },
+  { key = "return", with = "super", action = "ToggleFullscreen" },
+  { key = "f", with = "super | control", action = "ToggleFullscreen" },
+  { key = ",", with = "super", action = "OpenConfigEditor" },
+  # 保存配置后 Rio 自动重载；Cmd+, 打开 Neovim 编辑配置。
+  # Rio 原生命令面板。
+  { key = "escape", with = "super | shift", action = "OpenCommandPalette" },
+  # macOS 系统字符查看器。
+  { key = "u", with = "super | shift", action = "Run(/usr/bin/open -a CharacterPalette)" },

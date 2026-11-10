@@ -7,7 +7,7 @@ if _need_sudo; then
 
     log "Installing base tools..."
     sudo apt-get install -y -qq git curl wget unzip build-essential dirmngr gawk gnupg jq zsh \
-        fzf neovim
+        fzf neovim fontconfig fonts-noto-color-emoji ncurses-bin ncurses-term
     ok "base tools"
 else
     warn "跳过 apt-get update 和基础工具安装"
@@ -63,19 +63,100 @@ else
     skip "zoxide"
 fi
 
-if ! command -v kitty &>/dev/null; then
-    log "Installing kitty..."
-    $CURL -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
-    mkdir -p ~/.local/bin
-    ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
-    cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/ 2>/dev/null || true
-    cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/ 2>/dev/null || true
-    sed -i "s|Icon=kitty|Icon=$(readlink -f ~)/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" \
-        ~/.local/share/applications/kitty*.desktop 2>/dev/null || true
-    ok "kitty"
-else
-    skip "kitty"
-fi
+# Rio 的官方 .deb 分为 Wayland / X11 构建；在子 shell 内清理临时下载。
+_install_rio() (
+    rio_tmp=""
+    rio_version="${RIO_VERSION:-0.5.29}"
+    rio_version="${rio_version#v}"
+    if [[ ! "$rio_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        warn "RIO_VERSION 必须是稳定版版本号，例如 0.5.29"
+        return 1
+    fi
+
+    if command -v rio &>/dev/null; then
+        if ! rio --version | grep -i '^rioterm ' >/dev/null; then
+            warn "rio 命令已被其他程序占用，请先处理冲突后重试"
+            return 1
+        fi
+        skip "Rio ($(rio --version))"
+    else
+        if ! _can_sudo; then
+            warn "安装 Rio 的 .deb 需要 root 权限，跳过 Rio 安装"
+            return 0
+        fi
+
+        rio_arch="$(dpkg --print-architecture)"
+        case "$rio_arch" in
+            amd64|arm64) ;;
+            *)
+                warn "Rio 官方 .deb 不支持当前架构: $rio_arch"
+                return 0
+                ;;
+        esac
+
+        rio_backend="${RIO_LINUX_BACKEND:-auto}"
+        case "$rio_backend" in
+            auto)
+                if [ -n "${WAYLAND_DISPLAY:-}" ] || [ "${XDG_SESSION_TYPE:-}" = "wayland" ]; then
+                    rio_backend="wayland"
+                else
+                    rio_backend="x11"
+                fi
+                ;;
+            wayland|x11) ;;
+            *)
+                warn "RIO_LINUX_BACKEND 只能为 auto、wayland 或 x11"
+                return 1
+                ;;
+        esac
+
+        rio_asset="rioterm_${rio_version}_${rio_arch}_${rio_backend}.deb"
+        rio_tmp="$(mktemp -d)"
+        trap 'rm -rf -- "$rio_tmp"' EXIT
+        log "Installing Rio $rio_version ($rio_backend, $rio_arch)..."
+
+        $CURL -fsSL "https://api.github.com/repos/raphamorim/rio/releases/tags/v${rio_version}" \
+            -o "$rio_tmp/release.json"
+        if ! rio_sha256="$(jq -er --arg asset "$rio_asset" \
+            '.assets[] | select(.name == $asset) | .digest | select(startswith("sha256:")) | ltrimstr("sha256:")' \
+            "$rio_tmp/release.json")"; then
+            warn "官方 release 缺少 $rio_asset 或其 SHA256 摘要，停止安装"
+            return 1
+        fi
+        if [[ ! "$rio_sha256" =~ ^[[:xdigit:]]{64}$ ]]; then
+            warn "官方 release 缺少 $rio_asset 的 SHA256 摘要，停止安装"
+            return 1
+        fi
+        $CURL -fsSL "https://github.com/raphamorim/rio/releases/download/v${rio_version}/${rio_asset}" \
+            -o "$rio_tmp/$rio_asset"
+        printf '%s  %s\n' "$rio_sha256" "$rio_asset" > "$rio_tmp/rio.sha256"
+        (cd "$rio_tmp" && sha256sum --check rio.sha256)
+
+        # apt 的 _apt 用户需要读取本地包；临时目录只存放公开 release 文件。
+        chmod 755 "$rio_tmp"
+        chmod 644 "$rio_tmp/$rio_asset"
+        _sudo apt-get install -y "$rio_tmp/$rio_asset"
+        ok "Rio $rio_version ($rio_backend)"
+    fi
+
+    if infocmp rio >/dev/null 2>&1; then
+        skip "Rio terminfo"
+    elif command -v tic &>/dev/null; then
+        log "Installing Rio terminfo..."
+        if [ -z "${rio_tmp:-}" ]; then
+            rio_tmp="$(mktemp -d)"
+            trap 'rm -rf -- "$rio_tmp"' EXIT
+        fi
+        $CURL -fsSL "https://raw.githubusercontent.com/raphamorim/rio/v${rio_version}/misc/rio.terminfo" \
+            -o "$rio_tmp/rio.terminfo"
+        mkdir -p "$HOME/.terminfo"
+        tic -x -e xterm-rio,rio -o "$HOME/.terminfo" "$rio_tmp/rio.terminfo"
+        ok "Rio terminfo"
+    else
+        warn "未找到 tic，请安装 ncurses-bin 后为 Rio 安装 terminfo"
+    fi
+)
+_install_rio
 
 if ! command -v starship &>/dev/null; then
     log "Installing starship..."
@@ -146,8 +227,8 @@ else
     skip "Monaspace Nerd Font"
 fi
 
-if ! fc-list | grep -qi "LXGW WenKai"; then
-    log "Installing LXGW WenKai..."
+if ! fc-list --format='%{family}\n' | tr ',' '\n' | grep -Fxi 'LXGW WenKai Mono' >/dev/null; then
+    log "Installing LXGW WenKai Mono..."
     mkdir -p "$FONT_DIR/lxgw-wenkai"
     LXGW_TMP=$(mktemp -d)
     LXGW_VERSION=$($CURL -sL "https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest" | grep -oP '"tag_name":\s*"\K[^"]+')
@@ -155,9 +236,9 @@ if ! fc-list | grep -qi "LXGW WenKai"; then
     tar -xzf "$LXGW_TMP/lxgw.tar.gz" -C "$FONT_DIR/lxgw-wenkai" --strip-components=1
     rm -rf "$LXGW_TMP"
     fc-cache -f "$FONT_DIR"
-    ok "LXGW WenKai"
+    ok "LXGW WenKai Mono"
 else
-    skip "LXGW WenKai"
+    skip "LXGW WenKai Mono"
 fi
 
 if [ "$(uname -s)" = "Linux" ] && command -v zsh &>/dev/null; then

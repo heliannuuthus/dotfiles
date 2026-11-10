@@ -86,3 +86,11 @@ if (( $+commands[kubectl] )); then
 fi
 {{ end -}}
 (( $+commands[gh] )) && source <(gh completion -s zsh)
+
+{{ if ne .profile "server" -}}
+# Rio 桌面终端及标准提示符标记。
+(( $+commands[rio] )) && export TERMINAL=rio
+if [[ ${TERM_PROGRAM-} == rio && -r "$HOME/.config/rio/zsh-integration.zsh" ]]; then
+  source "$HOME/.config/rio/zsh-integration.zsh"
+fi
+{{ end -}}
