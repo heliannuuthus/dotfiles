@@ -117,11 +117,11 @@ RIO_LINUX_BACKEND=wayland chezmoi apply
 
 ### Obsidian（macOS）
 
-macOS profile 通过 Homebrew 安装 Obsidian，并给它打开的 vault 安装 Cupertino、Border、Style Settings 和 Iconic。首次配置默认使用 Cupertino 浅色、17 px 正文和可读行宽，同时开启文件和文件夹图标。切换到 Border 时会启用浅色卡片布局。
+macOS profile 通过 Homebrew 安装 Obsidian，并给它打开的 vault 安装 Border、Cupertino、Style Settings 和 Iconic。首次配置默认使用 Border 卡片布局并跟随 macOS 外观。配色参考 JetBrains Fleet，浅色为白灰底，深色为近黑窗口底和炭灰面板，两种模式都用蓝色强调。默认使用 17 px 正文和可读行宽，并开启文件和文件夹图标。
 
 安装时优先选当前打开或最近使用的 vault。没有现有 vault 时，会创建并登记 `~/Documents/Obsidian`，首次启动直接打开它。可以在首次配置前通过 `OBSIDIAN_VAULT` 指定绝对路径。已有 vault 建议先退出 Obsidian 再应用配置。首次启用社区插件时，Obsidian 可能要求确认信任 vault。
 
-重复运行会补齐缺失文件，并保留用户已选的主题和字号、图标规则以及已有社区插件。
+重复运行会补齐缺失文件与默认配置，并保留用户已选的主题、外观模式、字号、主题配色、图标规则和已有社区插件。
 
 ### 编程助手（macOS）
 

@@ -83,7 +83,7 @@ OBSIDIAN_ASSETS
         fi
     }
 
-    local appearance='{theme: "moonstone", cssTheme: "Cupertino", baseFontSize: 17, showRibbon: true}'
+    local appearance='{theme: "system", cssTheme: "Border", baseFontSize: 17, showRibbon: true}'
     if [ "${OBSIDIAN_APPLY_APPEARANCE:-}" = 1 ]; then
         obsidian_update_json "$config/appearance.json" "(. // {}) + $appearance"
     else
@@ -96,7 +96,26 @@ OBSIDIAN_ASSETS
     obsidian_update_json "$config/plugins/iconic/data.json" '
         {showAllFileIcons: true, showAllFolderIcons: true, minimalFolderIcons: false} + (. // {})'
     obsidian_update_json "$config/plugins/obsidian-style-settings/data.json" '
-        {"Appearance-light@@card-layout-open-light": true} + (. // {})'
+        {
+            "Appearance-light@@card-layout-open-light": true,
+            "Appearance-light@@background-secondary@@light": "#f8f8f9",
+            "Appearance-light@@background-tertiary@@light": "#eeeff0",
+            "Appearance-light@@on-border-light": "#4c5157",
+            "Appearance-light@@accent-color-override-light": true,
+            "Appearance-light@@accent-light": "#1868c8",
+            "Appearance-light@@mod-left-split-background-select-light": "mod-left-split-background-secondary-light",
+            "Appearance-light@@mod-right-split-background-select-light": "mod-right-split-background-secondary-light",
+            "Appearance-dark@@card-layout-open-dark": true,
+            "Appearance-dark@@theme-dark-style-select": "theme-dark-background-black",
+            "Appearance-dark@@background-primary@@dark": "#18191a",
+            "Appearance-dark@@background-secondary@@dark": "#18191a",
+            "Appearance-dark@@background-tertiary@@dark": "#090909",
+            "Appearance-dark@@on-border-dark": "#c3c5c9",
+            "Appearance-dark@@accent-color-override-dark": true,
+            "Appearance-dark@@accent-dark": "#4b8dec",
+            "Appearance-dark@@mod-left-split-background-select-dark": "mod-left-split-background-secondary-dark",
+            "Appearance-dark@@mod-right-split-background-select-dark": "mod-right-split-background-secondary-dark"
+        } + (. // {})'
 
     if $register_vault; then
         local vault_id
