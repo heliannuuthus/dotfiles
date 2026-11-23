@@ -51,7 +51,7 @@ chezmoi apply
 | Homebrew / apt 全量工具 | brew | apt | apt 最小集 |
 | fcitx5 / 输入法 | — | ✓ | — |
 | Rio + 字体 | ✓ | ✓ | — |
-| Obsidian + 主题和图标 | ✓ | — | — |
+| Obsidian + 主题和图标 | ✓ | WSLg | — |
 | Pi + omp | ✓ | — | — |
 | clash-party 配置 | ✓ | ✓ | — |
 | eza / fzf / neovim / pnpm | ✓ | ✓ | ✓ |
@@ -115,13 +115,13 @@ RIO_LINUX_BACKEND=wayland chezmoi apply
 
 这些模板按默认 `~/.config` 目录部署，未额外映射自定义 `XDG_CONFIG_HOME` 或 `RIO_CONFIG_HOME`。切换标题栏模式、分屏留白等窗口布局参数后，需要新建 Rio 窗口。
 
-### Obsidian（macOS）
+### Obsidian（macOS / WSLg）
 
-macOS profile 通过 Homebrew 安装 Obsidian，并给它打开的 vault 安装 Cupertino、Border、Style Settings 和 Iconic。首次配置默认使用 Cupertino 浅色、17 px 正文和可读行宽，同时开启文件和文件夹图标。切换到 Border 时会启用浅色卡片布局。
+macOS profile 通过 Homebrew 安装 Obsidian。WSL 2 启用 WSLg 后，选择 `ubuntu` profile，安装器会在 `amd64` 发行版中安装官方 `.deb`。两边共用 Minimal 主题和配置，外观跟随运行环境的系统设置，带 Bases、文件和文件夹图标、20/18 px 图标、75% 正文栏宽、17 px 字号、32 px 行高、H1–H6 标题层级，以及中英文霞鹜文楷和字体连字。
 
-安装时优先选当前打开或最近使用的 vault。没有现有 vault 时，会创建并登记 `~/Documents/Obsidian`，首次启动直接打开它。可以在首次配置前通过 `OBSIDIAN_VAULT` 指定绝对路径。已有 vault 建议先退出 Obsidian 再应用配置。首次启用社区插件时，Obsidian 可能要求确认信任 vault。
+安装时优先选当前打开或最近使用的 Vault，也可用 `OBSIDIAN_VAULT` 指定绝对路径。没有现有 Vault 时，会在当前系统创建并登记一个空的 `~/Documents/Obsidian`。WSLg 下从 Linux 侧启动 `obsidian`，Vault 可以直接放在 WSL 的 Linux 文件系统内。dotfiles 只提供配置和插件，笔记、Base 文件、附件和窗口会话由各自的 Vault 管理。
 
-重复运行会补齐缺失文件，并保留用户已选的主题和字号、图标规则以及已有社区插件。
+重复运行会保留已选主题、字号、已有 CSS 片段和插件。要在现有 Vault 主动启用这套排版，可先退出 Obsidian，再用 `OBSIDIAN_APPLY_APPEARANCE=1` 运行安装脚本。首次启用社区插件时，Obsidian 可能会要求确认信任 Vault。
 
 ### 编程助手（macOS）
 

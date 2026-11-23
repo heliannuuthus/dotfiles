@@ -1,0 +1,41 @@
+@font-face {
+  font-family: "WenKai Writing";
+  src: local("LXGW WenKai Regular"), local("LXGWWenKai-Regular");
+  font-weight: 100 500;
+}
+
+@font-face {
+  font-family: "WenKai Writing";
+  src: local("LXGW WenKai Medium"), local("LXGWWenKai-Medium");
+  font-weight: 501 900;
+}
+
+.mod-root :is(.markdown-source-view, .markdown-preview-view) {
+  --font-text: "WenKai Writing", system-ui, sans-serif;
+  --font-editor: var(--font-text);
+  --line-height-normal: 32px;
+  --inline-title-font: var(--font-text);
+  --inline-title-size: 1.875em;
+  --inline-title-line-height: 1.25;
+  --inline-title-weight: 650;
+  --h1-size: 1.75em;
+  --h2-size: 1.45em;
+  --h3-size: 1.25em;
+  --h4-size: 1.12em;
+  --h5-size: 1em;
+  --h6-size: 0.94em;
+  --h1-weight: 650;
+  --h2-weight: 650;
+  --h3-weight: 600;
+  --h4-weight: 600;
+  --h5-weight: 600;
+  --h6-weight: 600;
+
+  font-variant-ligatures: discretionary-ligatures contextual;
+}
+
+.mod-root .markdown-source-view > .cm-editor > .cm-scroller > .cm-sizer,
+.mod-root .markdown-preview-view > .markdown-preview-sizer {
+  max-width: 75%;
+  margin-inline: auto;
+}

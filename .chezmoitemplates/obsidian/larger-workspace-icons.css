@@ -1,0 +1,46 @@
+body:not(.is-mobile) :is(
+  .workspace-ribbon .side-dock-ribbon-action,
+  .nav-header .nav-action-button,
+  .view-actions .view-action,
+  .mod-sidedock .workspace-tab-header-inner-icon
+) {
+  --icon-size: 20px;
+  --icon-stroke: 1.65px;
+}
+
+body:not(.is-mobile) :is(
+  .workspace-ribbon .side-dock-ribbon-action,
+  .mod-sidedock .workspace-tab-header-inner-icon
+) > :is(svg, .iconic-emoji) {
+  --icon-size: 20px;
+  --icon-stroke: 1.65px;
+}
+
+body:not(.is-mobile) .workspace-ribbon .side-dock-ribbon-action {
+  min-inline-size: 32px;
+  min-block-size: 28px;
+}
+
+body:not(.is-mobile) .mod-sidedock .workspace-tab-header-inner-icon {
+  min-inline-size: 20px;
+  min-block-size: 20px;
+}
+
+body:not(.is-mobile) :is(
+  .mod-root .workspace-tab-header-inner-icon,
+  .nav-file-title > .iconic-sidekick,
+  .nav-folder-title > .iconic-sidekick
+) {
+  --icon-size: 18px;
+  --icon-stroke: 1.65px;
+}
+
+body:not(.is-mobile) :is(.nav-file-title, .nav-folder-title) > .iconic-sidekick {
+  flex: 0 0 var(--icon-size);
+  inline-size: var(--icon-size);
+}
+
+body:not(.is-mobile) :is(.nav-file-title, .nav-folder-title) > .iconic-sidekick > :is(svg, .iconic-emoji) {
+  --icon-size: 18px;
+  --icon-stroke: 1.65px;
+}

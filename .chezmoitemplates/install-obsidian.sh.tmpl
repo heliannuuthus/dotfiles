@@ -1,6 +1,42 @@
+{{ if eq .chezmoi.os "linux" -}}
+install_obsidian_wsl() (
+    set -e
+    if command -v obsidian >/dev/null; then
+        skip "Obsidian"
+        return
+    fi
+    if [ "$(dpkg --print-architecture)" != "amd64" ]; then
+        warn "Obsidian: the upstream .deb is only available for amd64"
+        return
+    fi
+    _need_sudo || return 0
+
+    local staging asset=obsidian_1.15.1_amd64.deb
+    staging=$(mktemp -d)
+    trap 'rm -rf "$staging"' EXIT
+    chmod 755 "$staging"
+    $CURL -fsSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.15.1/$asset" -o "$staging/$asset"
+    if ! printf '%s  %s\n' f77b6dfc8c040214f2febad2b1b9b051b6a838a47b0f4fb90a31cfcb79b8fcec "$staging/$asset" | sha256sum -c --status; then
+        warn "Obsidian package checksum mismatch: $asset"
+        return 1
+    fi
+    chmod 644 "$staging/$asset"
+    _sudo apt-get install -y "$staging/$asset"
+    ok "Obsidian"
+)
+
+install_obsidian_wsl
+{{ end -}}
+
 install_obsidian_appearance() (
     set -e
+{{ if eq .chezmoi.os "darwin" -}}
     local app_dir="$HOME/Library/Application Support/obsidian"
+    local -a checksum=(shasum -a 256)
+{{ else -}}
+    local app_dir="${XDG_CONFIG_HOME:-$HOME/.config}/obsidian"
+    local -a checksum=(sha256sum)
+{{ end -}}
     local registry="$app_dir/obsidian.json"
     local vault="${OBSIDIAN_VAULT:-}" candidate register_vault=false
 
@@ -45,11 +81,13 @@ install_obsidian_appearance() (
         $complete && continue
         mkdir -p "$staging/$bundle"
         $CURL -fsSL "https://github.com/$asset" -o "$staging/$bundle/${asset##*/}"
-        if ! printf '%s  %s\n' "$digest" "$staging/$bundle/${asset##*/}" | shasum -a 256 -c --status; then
+        if ! printf '%s  %s\n' "$digest" "$staging/$bundle/${asset##*/}" | "${checksum[@]}" -c --status; then
             warn "Obsidian add-on checksum mismatch: $asset"
             return 1
         fi
     done <<'OBSIDIAN_ASSETS'
+themes/Minimal kepano/obsidian-minimal/releases/download/9.1.4/manifest.json 67a4ff8e848607644a3092bb5b016c934dba0672a3411143e314348ac6d4f7e7
+themes/Minimal kepano/obsidian-minimal/releases/download/9.1.4/theme.css b63ef8a162529a06a945b51a4dacf73333b1d273660be26c86def455584996a8
 themes/Cupertino svnaxis/obsidian-cupertino/releases/download/4.1.2/manifest.json 963b8792a19d01d71b8e7732321ffe3058c2baef33de1a8c0ebb085bb7ebff2e
 themes/Cupertino svnaxis/obsidian-cupertino/releases/download/4.1.2/theme.css b337a1c575a83e888a22f4ad5e420983fb8f4899e12ec001b17d6aea11526530
 themes/Border Akifyss/obsidian-border/releases/download/1.13.9/manifest.json 655803f2c7d8ed609de4f979aa913df7a463a278a63376da67d7c0372412b862
@@ -61,11 +99,25 @@ plugins/iconic gfxholo/iconic/releases/download/1.1.11/main.js 33ad80a07b0bb1a92
 plugins/iconic gfxholo/iconic/releases/download/1.1.11/manifest.json 6825fd9e13a37b650d876f9c5d5c0f19d1382f90e87f8287ac3c48128c63f556
 plugins/iconic gfxholo/iconic/releases/download/1.1.11/styles.css d83afa6028ed6333ce3612547cf2086686f4a51565929cccbb0a516513a83077
 OBSIDIAN_ASSETS
-    for bundle in themes/Cupertino themes/Border plugins/obsidian-style-settings plugins/iconic; do
+    for bundle in themes/Minimal themes/Cupertino themes/Border plugins/obsidian-style-settings plugins/iconic; do
         [ -d "$staging/$bundle" ] || continue
         mkdir -p "$config/$bundle"
         mv -f "$staging/$bundle/"* "$config/$bundle/"
     done
+
+    mkdir -p "$config/snippets"
+    if [ ! -e "$config/snippets/workspace-writing-layout.css" ]; then
+        cat > "$staging/workspace-writing-layout.css" <<'OBSIDIAN_WRITING_CSS'
+{{ include ".chezmoitemplates/obsidian/workspace-writing-layout.css" -}}
+OBSIDIAN_WRITING_CSS
+        mv "$staging/workspace-writing-layout.css" "$config/snippets/"
+    fi
+    if [ ! -e "$config/snippets/larger-workspace-icons.css" ]; then
+        cat > "$staging/larger-workspace-icons.css" <<'OBSIDIAN_ICONS_CSS'
+{{ include ".chezmoitemplates/obsidian/larger-workspace-icons.css" -}}
+OBSIDIAN_ICONS_CSS
+        mv "$staging/larger-workspace-icons.css" "$config/snippets/"
+    fi
 
     obsidian_update_json() {
         local path="$1" output
@@ -83,13 +135,16 @@ OBSIDIAN_ASSETS
         fi
     }
 
-    local appearance='{theme: "moonstone", cssTheme: "Cupertino", baseFontSize: 17, showRibbon: true}'
+    local appearance='{theme: "system", cssTheme: "Minimal", baseFontSize: 17, showRibbon: true, translucency: false}'
+    local snippets='["workspace-writing-layout", "larger-workspace-icons"]'
     if [ "${OBSIDIAN_APPLY_APPEARANCE:-}" = 1 ]; then
-        obsidian_update_json "$config/appearance.json" "(. // {}) + $appearance"
+        obsidian_update_json "$config/appearance.json" "(. // {}) + $appearance | .enabledCssSnippets |= ((. // []) + $snippets | unique)"
+        obsidian_update_json "$config/app.json" '(. // {}) + {readableLineLength: false}'
     else
-        obsidian_update_json "$config/appearance.json" "$appearance + (. // {})"
+        obsidian_update_json "$config/appearance.json" "$appearance + (. // {}) | if .cssTheme == \"Minimal\" then {enabledCssSnippets: $snippets} + . else . end"
+        obsidian_update_json "$config/app.json" '{readableLineLength: false} + (. // {})'
     fi
-    obsidian_update_json "$config/app.json" '{readableLineLength: true} + (. // {})'
+    obsidian_update_json "$config/core-plugins.json" '{bases: true} + (. // {})'
     obsidian_update_json "$config/community-plugins.json" '
         reduce ("obsidian-style-settings", "iconic") as $id ((. // []);
             if index($id) == null then . + [$id] else . end)'
@@ -100,7 +155,7 @@ OBSIDIAN_ASSETS
 
     if $register_vault; then
         local vault_id
-        vault_id=$(printf '%s' "$vault" | shasum -a 256 | cut -c 1-16)
+        vault_id=$(printf '%s' "$vault" | "${checksum[@]}" | cut -c 1-16)
         mkdir -p "$app_dir"
         obsidian_update_json "$registry" --arg id "$vault_id" --arg path "$vault" \
             --argjson time "$(date +%s)000" '
