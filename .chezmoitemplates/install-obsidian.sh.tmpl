@@ -1,0 +1,113 @@
+install_obsidian_appearance() (
+    set -e
+    local app_dir="$HOME/Library/Application Support/obsidian"
+    local registry="$app_dir/obsidian.json"
+    local vault="${OBSIDIAN_VAULT:-}" candidate register_vault=false
+
+    if [ -z "$vault" ] && [ -f "$registry" ]; then
+        local vault_paths
+        vault_paths=$(jq -r '[.vaults[]? | select(.path | type == "string")]
+            | sort_by([(.open // false), (.ts // 0)]) | reverse | .[].path' "$registry")
+        while IFS= read -r candidate; do
+            if [ -n "$candidate" ] && [ -d "$candidate" ]; then
+                vault="$candidate"
+                break
+            fi
+        done <<< "$vault_paths"
+    fi
+    if [ -z "$vault" ]; then
+        vault="$HOME/Documents/Obsidian"
+        register_vault=true
+    fi
+    case "$vault" in
+        /*) ;;
+        *) warn "OBSIDIAN_VAULT must be an absolute path"; return 1 ;;
+    esac
+
+    local config="$vault/.obsidian" staging
+    mkdir -p "$config"
+    staging=$(mktemp -d "$config/.dotfiles-install.XXXXXX")
+    trap 'rm -rf "$staging"' EXIT
+
+    local bundle asset digest current= complete required required_files
+    while read -r bundle asset digest; do
+        if [ "$bundle" != "$current" ]; then
+            current="$bundle"
+            complete=true
+            case "$bundle" in
+                themes/*) required_files="manifest.json theme.css" ;;
+                plugins/*) required_files="manifest.json main.js styles.css" ;;
+            esac
+            for required in $required_files; do
+                [ -s "$config/$bundle/$required" ] || complete=false
+            done
+        fi
+        $complete && continue
+        mkdir -p "$staging/$bundle"
+        $CURL -fsSL "https://github.com/$asset" -o "$staging/$bundle/${asset##*/}"
+        if ! printf '%s  %s\n' "$digest" "$staging/$bundle/${asset##*/}" | shasum -a 256 -c --status; then
+            warn "Obsidian add-on checksum mismatch: $asset"
+            return 1
+        fi
+    done <<'OBSIDIAN_ASSETS'
+themes/Cupertino svnaxis/obsidian-cupertino/releases/download/4.1.2/manifest.json 963b8792a19d01d71b8e7732321ffe3058c2baef33de1a8c0ebb085bb7ebff2e
+themes/Cupertino svnaxis/obsidian-cupertino/releases/download/4.1.2/theme.css b337a1c575a83e888a22f4ad5e420983fb8f4899e12ec001b17d6aea11526530
+themes/Border Akifyss/obsidian-border/releases/download/1.13.9/manifest.json 655803f2c7d8ed609de4f979aa913df7a463a278a63376da67d7c0372412b862
+themes/Border Akifyss/obsidian-border/releases/download/1.13.9/theme.css 2f7adf9e56b66e5510fbe9354c8161210005bb6f72a359cfac3dfb25f4711f98
+plugins/obsidian-style-settings community-archive/obsidian-style-settings/releases/download/1.0.9/main.js 1828abaacdab4c5578b705a625c585b30512f8efad4c7cfc5a18e70cc3557468
+plugins/obsidian-style-settings community-archive/obsidian-style-settings/releases/download/1.0.9/manifest.json 9cffdc20cf2aa1354820e0050b694b0f9b576446e3d5d44a36ae8b0187e5bfb8
+plugins/obsidian-style-settings community-archive/obsidian-style-settings/releases/download/1.0.9/styles.css ee7937d2be50653a89ccb30ae5f0572b23507d5b7f1328d005271a363075bfd8
+plugins/iconic gfxholo/iconic/releases/download/1.1.11/main.js 33ad80a07b0bb1a926a77f0ae45d76ae7b797b1017a33aadbd70b9bd403d9843
+plugins/iconic gfxholo/iconic/releases/download/1.1.11/manifest.json 6825fd9e13a37b650d876f9c5d5c0f19d1382f90e87f8287ac3c48128c63f556
+plugins/iconic gfxholo/iconic/releases/download/1.1.11/styles.css d83afa6028ed6333ce3612547cf2086686f4a51565929cccbb0a516513a83077
+OBSIDIAN_ASSETS
+    for bundle in themes/Cupertino themes/Border plugins/obsidian-style-settings plugins/iconic; do
+        [ -d "$staging/$bundle" ] || continue
+        mkdir -p "$config/$bundle"
+        mv -f "$staging/$bundle/"* "$config/$bundle/"
+    done
+
+    obsidian_update_json() {
+        local path="$1" output
+        shift
+        if [ -f "$path" ]; then
+            output=$(jq "$@" "$path")
+        else
+            output=$(jq -n "$@")
+        fi
+        if [ ! -f "$path" ] || [ "$output" != "$(cat "$path")" ]; then
+            local temporary
+            temporary=$(mktemp "${path}.XXXXXX")
+            printf '%s\n' "$output" > "$temporary"
+            mv -f "$temporary" "$path"
+        fi
+    }
+
+    local appearance='{theme: "moonstone", cssTheme: "Cupertino", baseFontSize: 17, showRibbon: true}'
+    if [ "${OBSIDIAN_APPLY_APPEARANCE:-}" = 1 ]; then
+        obsidian_update_json "$config/appearance.json" "(. // {}) + $appearance"
+    else
+        obsidian_update_json "$config/appearance.json" "$appearance + (. // {})"
+    fi
+    obsidian_update_json "$config/app.json" '{readableLineLength: true} + (. // {})'
+    obsidian_update_json "$config/community-plugins.json" '
+        reduce ("obsidian-style-settings", "iconic") as $id ((. // []);
+            if index($id) == null then . + [$id] else . end)'
+    obsidian_update_json "$config/plugins/iconic/data.json" '
+        {showAllFileIcons: true, showAllFolderIcons: true, minimalFolderIcons: false} + (. // {})'
+    obsidian_update_json "$config/plugins/obsidian-style-settings/data.json" '
+        {"Appearance-light@@card-layout-open-light": true} + (. // {})'
+
+    if $register_vault; then
+        local vault_id
+        vault_id=$(printf '%s' "$vault" | shasum -a 256 | cut -c 1-16)
+        mkdir -p "$app_dir"
+        obsidian_update_json "$registry" --arg id "$vault_id" --arg path "$vault" \
+            --argjson time "$(date +%s)000" '
+                (. // {}) | .vaults[$id] = {path: $path, ts: $time, open: true}'
+    fi
+    ok "Obsidian appearance: $vault"
+)
+
+log "Installing Obsidian themes and icons..."
+install_obsidian_appearance
