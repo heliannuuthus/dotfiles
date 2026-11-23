@@ -1,0 +1,45 @@
+# --- macOS: Pi and omp ---
+
+if command -v pi &>/dev/null; then
+    skip "Pi"
+else
+    log "Installing Pi..."
+    brew install pi-coding-agent
+    ok "Pi"
+fi
+
+install_omp() (
+    local binary checksum staging bin_dir="$HOME/.local/bin"
+    if command -v omp &>/dev/null || [ -x "$bin_dir/omp" ]; then
+        skip "omp"
+        return 0
+    fi
+
+    case "$(uname -m)" in
+        arm64)
+            binary=omp-darwin-arm64
+            checksum=dca5643669ed5e553f707bd065499babd0fe3030696bbb24c9da09c798af5abb
+            ;;
+        x86_64)
+            binary=omp-darwin-x64
+            checksum=edf51e3754f3f145298ae6dbfd9e6d5f5ec178e3386f043959ec71f7981c52af
+            ;;
+        *) warn "Unsupported architecture for omp: $(uname -m)"; return 1 ;;
+    esac
+
+    log "Installing omp v19.1.0..."
+    mkdir -p "$bin_dir"
+    staging=$(mktemp -d "$bin_dir/.omp-install.XXXXXX")
+    trap 'rm -rf "$staging"' EXIT
+    $CURL -fsSL "https://github.com/can1357/oh-my-pi/releases/download/v19.1.0/$binary" -o "$staging/omp"
+    if ! printf '%s  %s\n' "$checksum" "$staging/omp" | shasum -a 256 -c --status; then
+        warn "omp v19.1.0 checksum mismatch for $binary"
+        return 1
+    fi
+    chmod +x "$staging/omp"
+    "$staging/omp" --version
+    mv -f "$staging/omp" "$bin_dir/omp"
+    ok "omp v19.1.0"
+)
+
+install_omp

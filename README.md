@@ -52,6 +52,7 @@ chezmoi apply
 | fcitx5 / 输入法 | — | ✓ | — |
 | Rio + 字体 | ✓ | ✓ | — |
 | Obsidian + 主题和图标 | ✓ | — | — |
+| Pi + omp | ✓ | — | — |
 | clash-party 配置 | ✓ | ✓ | — |
 | eza / fzf / neovim / pnpm | ✓ | ✓ | ✓ |
 | bat / zoxide / nerdctl | ✓ | ✓ | — |
@@ -121,6 +122,10 @@ macOS profile 通过 Homebrew 安装 Obsidian，并给它打开的 vault 安装 
 安装时优先选当前打开或最近使用的 vault。没有现有 vault 时，会创建并登记 `~/Documents/Obsidian`，首次启动直接打开它。可以在首次配置前通过 `OBSIDIAN_VAULT` 指定绝对路径。已有 vault 建议先退出 Obsidian 再应用配置。首次启用社区插件时，Obsidian 可能要求确认信任 vault。
 
 重复运行会补齐缺失文件，并保留用户已选的主题和字号、图标规则以及已有社区插件。
+
+### 编程助手（macOS）
+
+macOS profile 通过 Homebrew 安装 Pi（`pi`），并将校验过的 omp 官方二进制装到 `~/.local/bin/omp`。Zsh 已将这个目录加入 `PATH`。已能在 `PATH` 上找到的 Pi 和 omp 会保留。
 
 ## 架构
 
