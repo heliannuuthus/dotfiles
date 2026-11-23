@@ -227,8 +227,9 @@ else
     skip "Monaspace Nerd Font"
 fi
 
-if ! fc-list --format='%{family}\n' | tr ',' '\n' | grep -Fxi 'LXGW WenKai Mono' >/dev/null; then
-    log "Installing LXGW WenKai Mono..."
+LXGW_FAMILIES=$(fc-list --format='%{family}\n' | tr ',' '\n')
+if ! grep -Fxiq 'LXGW WenKai Mono' <<< "$LXGW_FAMILIES" || ! grep -Fxiq 'LXGW WenKai' <<< "$LXGW_FAMILIES"; then
+    log "Installing LXGW WenKai and WenKai Mono..."
     mkdir -p "$FONT_DIR/lxgw-wenkai"
     LXGW_TMP=$(mktemp -d)
     LXGW_VERSION=$($CURL -sL "https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest" | grep -oP '"tag_name":\s*"\K[^"]+')
@@ -236,9 +237,13 @@ if ! fc-list --format='%{family}\n' | tr ',' '\n' | grep -Fxi 'LXGW WenKai Mono'
     tar -xzf "$LXGW_TMP/lxgw.tar.gz" -C "$FONT_DIR/lxgw-wenkai" --strip-components=1
     rm -rf "$LXGW_TMP"
     fc-cache -f "$FONT_DIR"
-    ok "LXGW WenKai Mono"
+    ok "LXGW WenKai and WenKai Mono"
 else
-    skip "LXGW WenKai Mono"
+    skip "LXGW WenKai and WenKai Mono"
+fi
+
+if [ -n "${WSL_DISTRO_NAME:-}" ] && [ -d /mnt/wslg ]; then
+{{ template "install-obsidian.sh.tmpl" . }}
 fi
 
 if [ "$(uname -s)" = "Linux" ] && command -v zsh &>/dev/null; then
